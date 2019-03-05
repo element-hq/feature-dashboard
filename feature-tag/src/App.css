@@ -1,0 +1,8 @@
+.FeatureTag-Row {
+    display: table-row;
+}
+
+.FeatureTag-Row div {
+    display: table-cell;
+    padding: 3px;
+}
