@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
+import dateFormat from 'dateformat';
 import Octokit from '@octokit/rest';
 import queryString from 'query-string';
 import './App.css';
 
 const octokit = new Octokit({
-    auth: 'token ff79c0f9e2711023f289718198604c6358b2eeab'
+    auth: 'token 9c2e4c4078790064318da8756b19bdfd9f25bc2b'
 });
 
 function getGithubProject(issue) {
@@ -26,18 +27,34 @@ async function getTaskCount(issue) {
     let comments = await octokit.paginate(options);
     comments = comments.map(comment => comment.body);
     comments.unshift(issue.body);
-    comments = comments.join("\n").split(/\r?\n/).map(comment => comment.trim());
-    console.log("outstanding", comments);
-    let completed = comments.filter(comment => comment.toLowerCase().startsWith('- [x]')).length;
-    let outstanding = comments.filter(comment => comment.startsWith('- [ ]')).length;
+    comments = comments.join("\n").split(/\r?\n/)
+    let completed = comments.filter(comment => comment.trim().toLowerCase().startsWith('- [x]')).length;
+    let outstanding = comments.filter(comment => comment.trim().startsWith('- [ ]')).length;
     return {
         completed: completed,
         outstanding: outstanding
     }
 }
 
-async function getTaskClown(issue) {
-    return (0, 0);
+function establishDeliveryDate(issue, deliveryDate) {
+    if (deliveryDate === null) {
+        console.log('Already seen one issue without a delivery date, so returning null');
+        return null;
+    }
+    else if (issue.milestone && issue.milestone.due_on) {
+        if (deliveryDate === undefined) {
+            console.log('Seen first delivery date, returning it' + issue.milestone.due_on);
+            return new Date(issue.milestone.due_on);
+        }
+        else {
+            console.log('Seen another delivery date, returning it: ' + Math.max(deliveryDate, new Date(issue.milestone.due_on)));
+            return Math.max(deliveryDate, new Date(issue.milestone.due_on));
+        }
+    }
+    else {
+        console.log('Returning null ' + issue.number);
+        return null;
+    }
 }
 
 async function getProject(label, repos) {
@@ -49,70 +66,66 @@ async function getProject(label, repos) {
     return await octokit.paginate(options)
     .then(async(issues) => {
         const repos = {};
-        await issues.forEach(async(issue) => {
+        for (const issue of issues) {
             let githubProject = getGithubProject(issue);
 
-            let tasks = await getTaskCount(issue);
-            let completed_tasks = tasks.completed;
-            let outstanding_tasks = tasks.completed;
+            /* let tasks = await getTaskCount(issue); */
             repos[githubProject.repo] = repos[githubProject.repo] || {
                 repo: githubProject.owner + '/' + githubProject.repo,
-                todo: 0,
-                wip: 0,
-                done: 0,
-                bugs: {
-                    p1: 0,
-                    p2: 0,
-                    p3: 0
+                deliveryDate: undefined,
+                todo: {
+                    issues: 0,
+                    bugs: {
+                        p1: 0,
+                        p2: 0,
+                        p3: 0
+                    }
+                },
+                wip: {
+                    issues: 0
+                },
+                done: {
+                    issues: 0
                 }
             };
-            let labels = issue.labels.map(label => label.name);
-            if (labels.indexOf('bug') > -1) {
-                if (labels.indexOf('p1') > -1) {
-                    repos[githubProject.repo].bugs.p1 += 1;
+            const repo = repos[githubProject.repo];
+
+            if (issue.state === 'open' && (
+                    issue.assignees.length === 0 ||
+                    issue.assignee === undefined)
+            ) {
+                /* The issue is open and unassigned */
+                let labels = issue.labels.map(label => label.name);
+                if (labels.indexOf('bug') > -1) {
+                    for (const priority of ['p1', 'p2', 'p3']) {
+                        if (labels.indexOf(priority) > -1) {
+                            repo.todo.bugs[priority] += 1;
+                        }
+                    }
                 }
-                else if (labels.indexOf('p2') > -1) {
-                    repos[githubProject.repo].bugs.p2 += 1;
+                else {
+                    repo.todo.issues += 1;
                 }
-                else if (labels.indexOf('p3') > -1) {
-                    repos[githubProject.repo].bugs.p3 += 1;
+                if (issue.milestone != null &&
+                    issue.milestone.due_on) {
                 }
+
+                repo.deliveryDate = establishDeliveryDate(issue, repo.deliveryDate);
             }
-            else {
-                if (issue.state === 'closed') {
-                    if (completed_tasks || outstanding_tasks) {
-                        repos[githubProject.repo].done += completed_tasks;
-                    }
-                    repos[githubProject.repo].done += 1;
-                }
-                else if (issue.state === 'open' && issue.assignees.length === 0) {
-                    if (completed_tasks || outstanding_tasks) {
-                        repos[githubProject.repo].done += completed_tasks;
-                        repos[githubProject.repo].todo += outstanding_tasks;
-                    }
-                    else {
-                        repos[githubProject.repo].todo += 1;
-                    }
-                }
-                else if (issue.state === 'open') {
-                    if (completed_tasks || outstanding_tasks) {
-                        repos[githubProject.repo].done += completed_tasks;
-                        repos[githubProject.repo].wip += outstanding_tasks;
-                    }
-                    else {
-                        repos[githubProject.repo].wip += 1;
-                    }
-                }
+            else if (issue.state === 'open') {
+                /* The issue is open and assigned */
+                repo.wip.issues += 1;
+                repo.deliveryDate = establishDeliveryDate(issue, repo.deliveryDate);
             }
-        });
+            else if (issue.state === 'closed') {
+                /* The issue is closed */
+                repo.done.issues += 1;
+            }
+        }
         return {
             label: label,
             repos: Object.values(repos)
         }
-    })
-        .then(x => {
-            console.log(x);
-        return x;
     });
 }
 
@@ -123,12 +136,15 @@ class FeatureTagRow extends Component {
         return (
             <div className="FeatureTag-Row">
                 <div>{ this.props.project.repo }</div>
-                <div>{ this.props.project.todo }</div>
-                <div>{ this.props.project.wip }</div>
-                <div>{ this.props.project.done }</div>
-                <div>{ this.props.project.bugs.p1 || 0 }</div>
-                <div>{ this.props.project.bugs.p2 || 0 }</div>
-                <div>{ this.props.project.bugs.p3 || 0 }</div>
+                <div>{ this.props.project.todo.issues }</div>
+                <div>{ this.props.project.todo.bugs.p1 }</div>
+                <div>{ this.props.project.todo.bugs.p2 }</div>
+                <div>{ this.props.project.todo.bugs.p3 }</div>
+                <div>{ this.props.project.wip.issues }</div>
+                <div>{ this.props.project.done.issues }</div>
+                <div>{ this.props.project.deliveryDate ?
+                        dateFormat(this.props.project.deliveryDate, 'yyyy-mm-dd') :
+                        'None' }</div>
             </div>
         );
     }
@@ -144,11 +160,12 @@ class FeatureTag extends Component {
                     <div className="FeatureTag-Row">
                         <div>Repo</div>
                         <div>Todo</div>
-                        <div>WIP</div>
-                        <div>Done</div>
                         <div>P1</div>
                         <div>P2</div>
                         <div>P3</div>
+                        <div>WIP</div>
+                        <div>Done</div>
+                        <div>Delivery</div>
                     </div>
                     { rows }
                 </div>
@@ -173,6 +190,7 @@ class App extends Component {
             query.repo = [query.repo];
         }
         let project = await getProject(query.label, query.repo);
+        console.log(project);
         this.setState({project: project}) 
     }
 
