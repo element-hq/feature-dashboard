@@ -1,3 +1,28 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto');
+
+body {
+    font-family: 'Roboto', sans-serif;
+}
+
+.FeatureTag {
+    margin: 20px;
+    display: inline-block;
+    box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2),
+                0px 2px 4px rgba(0, 0, 0, 0.3);
+    padding: 6px;
+    border-radius: 2px;
+}
+
+.FeatureTag h1 {
+    margin: 0px;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+.FeatureTag-Table {
+    display: table;
+}
+
 .FeatureTag-Row {
     display: table-row;
 }
@@ -6,3 +31,49 @@
     display: table-cell;
     padding: 3px;
 }
+
+.FeatureTag-Header div {
+    text-transform: uppercase;
+    opacity: 0.6;
+    font-size: 12px;
+    font-weight: medium;
+}
+
+.FeatureTag .RepoCol {
+    display: table-column;
+    background-color: green;
+}
+
+.FeatureTag-Column {
+    display: table-column;
+}
+
+.Completed {
+    opacity: 0.6;
+    padding-left: 3px;
+}
+
+.FeatureTag-Row div:nth-child(1) {
+    padding-right: 30px;
+}
+
+.FeatureTag-Row div:nth-child(5) {
+    padding-right: 30px;
+}
+
+.FeatureTag-Row div:nth-child(6) {
+    padding-right: 30px;
+}
+
+.FeatureTag-Row div:nth-child(7) {
+    padding-right: 30px;
+}
+
+.NoDate {
+    opacity: 0.3;
+}
+
+.Todo {
+    width: 38px;
+}
+

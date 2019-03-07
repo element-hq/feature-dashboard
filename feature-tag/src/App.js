@@ -4,9 +4,16 @@ import Octokit from '@octokit/rest';
 import queryString from 'query-string';
 import './App.css';
 
-const octokit = new Octokit({
-    auth: 'token 9c2e4c4078790064318da8756b19bdfd9f25bc2b'
-});
+const TOKEN = ''; /* Github personal access token goes here (for now) */
+
+let options = {};
+if (TOKEN) {
+    options = {
+        auth: 'token ' + TOKEN
+    }
+}
+
+const octokit = new Octokit(options);
 
 function getGithubProject(issue) {
     let components = issue.repository_url.split('/');
@@ -141,10 +148,18 @@ class FeatureTagRow extends Component {
                 <div>{ this.props.project.todo.bugs.p2 }</div>
                 <div>{ this.props.project.todo.bugs.p3 }</div>
                 <div>{ this.props.project.wip.issues }</div>
-                <div>{ this.props.project.done.issues }</div>
-                <div>{ this.props.project.deliveryDate ?
+                <div>{ this.props.project.done.issues }
+                    <span className="Completed">
+                        ({ (this.props.project.done.issues /
+                            (this.props.project.todo.issues +
+                             this.props.project.todo.bugs.p1 +
+                             this.props.project.wip.issues +
+                             this.props.project.done.issues) * 100).toFixed(0) }%)
+                    </span>
+                </div>
+                <div className={ this.props.project.deliveryDate ? "" : "NoDate" }>{ this.props.project.deliveryDate ?
                         dateFormat(this.props.project.deliveryDate, 'yyyy-mm-dd') :
-                        'None' }</div>
+                    'n/a' }</div>
             </div>
         );
     }
@@ -156,8 +171,16 @@ class FeatureTag extends Component {
         return (
             <div className="FeatureTag">
                 <h1>{ this.props.project.label }</h1>
-                <div className="FeatureTag-Rows">
-                    <div className="FeatureTag-Row">
+                <div className="FeatureTag-Table">
+                    <div className="FeatureTag-Column Repo"></div>
+                    <div className="FeatureTag-Column Todo"></div>
+                    <div className="FeatureTag-Column Todo"></div>
+                    <div className="FeatureTag-Column Todo"></div>
+                    <div className="FeatureTag-Column Todo"></div>
+                    <div className="FeatureTag-Column WIP"></div>
+                    <div className="FeatureTag-Column Done"></div>
+                    <div className="FeatureTag-Column Delivery"></div>
+                    <div className="FeatureTag-Row FeatureTag-Header">
                         <div>Repo</div>
                         <div>Todo</div>
                         <div>P1</div>
