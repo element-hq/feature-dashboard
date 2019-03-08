@@ -78,6 +78,7 @@ async function getProject(label, repos) {
 
             /* let tasks = await getTaskCount(issue); */
             repos[githubProject.repo] = repos[githubProject.repo] || {
+                label: label,
                 repo: githubProject.owner + '/' + githubProject.repo,
                 deliveryDate: undefined,
                 todo: {
@@ -138,28 +139,37 @@ async function getProject(label, repos) {
 
 let query = queryString.parse(window.location.search);
 
+
+
 class FeatureTagRow extends Component {
     render() {
+        let issueLink = "https://github.com/" + this.props.project.repo +
+            "/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+no%3Aassignee+-label%3Abug+label%3A" + this.props.project.label;
+        let p1Link = "https://github.com/" + this.props.project.repo +
+            "/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3Ap1+label%3Abug+label%3A" + this.props.project.label;
+        let p2Link = "https://github.com/" + this.props.project.repo +
+            "/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3Ap2+label%3Abug+label%3A" + this.props.project.label;
+        let p3Link = "https://github.com/" + this.props.project.repo +
+            "/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3Ap3+label%3Abug+label%3A" + this.props.project.label;
         return (
             <div className="FeatureTag-Row">
                 <div>{ this.props.project.repo }</div>
-                <div>{ this.props.project.todo.issues }</div>
-                <div>{ this.props.project.todo.bugs.p1 }</div>
-                <div>{ this.props.project.todo.bugs.p2 }</div>
-                <div>{ this.props.project.todo.bugs.p3 }</div>
+                <div><a href={ issueLink } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.issues }</a></div>
+                <div><a href={ p1Link } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.bugs.p1 }</a></div>
+                <div><a href={ p2Link } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.bugs.p2 }</a></div>
+                <div><a href={ p3Link } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.bugs.p3 }</a></div>
                 <div>{ this.props.project.wip.issues }</div>
-                <div>{ this.props.project.done.issues }
-                    <span className="Completed">
-                        ({ (this.props.project.done.issues /
-                            (this.props.project.todo.issues +
-                             this.props.project.todo.bugs.p1 +
-                             this.props.project.wip.issues +
-                             this.props.project.done.issues) * 100).toFixed(0) }%)
-                    </span>
-                </div>
+                <div>{ this.props.project.done.issues }</div>
                 <div className={ this.props.project.deliveryDate ? "" : "NoDate" }>{ this.props.project.deliveryDate ?
                         dateFormat(this.props.project.deliveryDate, 'yyyy-mm-dd') :
                     'n/a' }</div>
+                <div className="Completed">
+                        { (this.props.project.done.issues /
+                            (this.props.project.todo.issues +
+                             this.props.project.todo.bugs.p1 +
+                             this.props.project.wip.issues +
+                             this.props.project.done.issues) * 100).toFixed(0) }%
+                </div>
             </div>
         );
     }
@@ -167,28 +177,41 @@ class FeatureTagRow extends Component {
 
 class FeatureTag extends Component {
     render() {
-        let rows = this.props.project.repos.map(repo => <FeatureTagRow project={ repo } key={ repo.repo }/>);
+        let rows = this.props.project.repos.map(project => <FeatureTagRow project={ project } key={ project.repo }/>);
+        let totalItems = this.props.project.repos.map(project =>
+            project.todo.issues + project.todo.bugs.p1 + project.todo.bugs.p2 + project.todo.bugs.p3 + project.wip.issues + project.done.issues)
+                .reduce((a, b) => a + b, 0);
+        console.log('totalItems', totalItems);
+        let completedItems = this.props.project.repos.map(project =>
+            project.done.issues)
+            .reduce((a, b) => a + b, 0);
+        console.log('completedItems', completedItems);
         return (
             <div className="FeatureTag">
-                <h1>{ this.props.project.label }</h1>
+                <div className="FeatureTag-Header">
+                    <div className="Label">{ this.props.project.label }</div>
+                    <div className="PercentComplete">{ totalItems ? (completedItems / totalItems * 100).toFixed(0) : "~"}%</div>
+                </div>
                 <div className="FeatureTag-Table">
-                    <div className="FeatureTag-Column Repo"></div>
-                    <div className="FeatureTag-Column Todo"></div>
-                    <div className="FeatureTag-Column Todo"></div>
-                    <div className="FeatureTag-Column Todo"></div>
-                    <div className="FeatureTag-Column Todo"></div>
-                    <div className="FeatureTag-Column WIP"></div>
-                    <div className="FeatureTag-Column Done"></div>
-                    <div className="FeatureTag-Column Delivery"></div>
-                    <div className="FeatureTag-Row FeatureTag-Header">
+                    <div className="FeatureTag-Column"></div>
+                    <div className="FeatureTag-Column Implementation"></div>
+                    <div className="FeatureTag-Column Implementation"></div>
+                    <div className="FeatureTag-Column Implementation"></div>
+                    <div className="FeatureTag-Column Bugs"></div>
+                    <div className="FeatureTag-Column Bugs"></div>
+                    <div className="FeatureTag-Column Bugs"></div>
+                    <div className="FeatureTag-Column"></div>
+                    <div className="FeatureTag-Column"></div>
+                    <div className="FeatureTag-Row FeatureTag-TableHeader">
                         <div>Repo</div>
                         <div>Todo</div>
+                        <div>WIP</div>
+                        <div>Done</div>
                         <div>P1</div>
                         <div>P2</div>
                         <div>P3</div>
-                        <div>WIP</div>
-                        <div>Done</div>
                         <div>Delivery</div>
+                        <div></div>
                     </div>
                     { rows }
                 </div>

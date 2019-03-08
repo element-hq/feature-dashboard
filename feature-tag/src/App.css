@@ -2,6 +2,7 @@
 
 body {
     font-family: 'Roboto', sans-serif;
+    font-variant-numeric: tabular-nums;
 }
 
 .FeatureTag {
@@ -9,14 +10,31 @@ body {
     display: inline-block;
     box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2),
                 0px 2px 4px rgba(0, 0, 0, 0.3);
-    padding: 6px;
+    padding: 16px;
     border-radius: 2px;
 }
 
-.FeatureTag h1 {
-    margin: 0px;
+.FeatureTag-Header {
+    margin-bottom: 12px;
+    white-space: nowrap;
     margin-top: 4px;
-    margin-bottom: 8px;
+    font-size: 32px;
+    padding-right: 4px;
+}
+
+.FeatureTag-Header .Label {
+    display: inline-block;
+    margin-left: 0px;
+    margin-right: auto;
+}
+
+.FeatureTag-Header .PercentComplete {
+    float: right;
+    display: inline-block;
+    opacity: 0.4;
+    padding-left: 20px;
+    margin-left: auto;
+    margin-right: 0px;
 }
 
 .FeatureTag-Table {
@@ -32,7 +50,7 @@ body {
     padding: 3px;
 }
 
-.FeatureTag-Header div {
+.FeatureTag-TableHeader div {
     text-transform: uppercase;
     opacity: 0.6;
     font-size: 12px;
@@ -49,31 +67,43 @@ body {
 }
 
 .Completed {
-    opacity: 0.6;
-    padding-left: 3px;
+    padding-left: 6px;
 }
 
 .FeatureTag-Row div:nth-child(1) {
     padding-right: 30px;
 }
 
-.FeatureTag-Row div:nth-child(5) {
+.FeatureTag-Row div:nth-child(4) {
     padding-right: 30px;
 }
 
 .FeatureTag-Row div:nth-child(6) {
-    padding-right: 30px;
+    opacity: 0.4;
 }
 
 .FeatureTag-Row div:nth-child(7) {
+    opacity: 0.4;
     padding-right: 30px;
+}
+
+.FeatureTag-Row div:nth-child(8) {
+    padding-right: 20px;
 }
 
 .NoDate {
     opacity: 0.3;
 }
 
-.Todo {
-    width: 38px;
+.Implementation {
+    width: 35px;
+}
+
+.LowPriority {
+    opacity: 0.4;
+}
+
+.Bugs {
+    width: 33px;
 }
 
