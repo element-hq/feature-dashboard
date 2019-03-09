@@ -84,10 +84,14 @@ body {
 
 .FeatureTag-Row div:nth-child(7) {
     opacity: 0.4;
-    padding-right: 30px;
 }
 
 .FeatureTag-Row div:nth-child(8) {
+    opacity: 0.4;
+    padding-right: 30px;
+}
+
+.FeatureTag-Row div:nth-child(9) {
     padding-right: 20px;
 }
 

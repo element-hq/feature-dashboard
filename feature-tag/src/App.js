@@ -24,6 +24,24 @@ function getGithubProject(issue) {
     }
 }
 
+async function getIssue(issue) {
+    let progress = undefined;
+    if (issue.state !== 'closed') {
+        progress = await getTaskCount(issue);
+    }
+
+    return {
+        url: issue.url,
+        labels: issue.labels.map(label => {
+            return {
+                color: label.color,
+                ame: label.name
+            }
+        }),
+        progress: progress
+    }
+}
+
 async function getTaskCount(issue) {
     let githubProject = getGithubProject(issue);
     let options = octokit.issues.listComments.endpoint.merge({
@@ -82,18 +100,23 @@ async function getProject(label, repos) {
                 repo: githubProject.owner + '/' + githubProject.repo,
                 deliveryDate: undefined,
                 todo: {
-                    issues: 0,
+                    issues: [],
                     bugs: {
-                        p1: 0,
-                        p2: 0,
-                        p3: 0
+                        p1: [],
+                        p2: [],
+                        p3: []
                     }
                 },
                 wip: {
-                    issues: 0
+                    issues: []
                 },
                 done: {
-                    issues: 0
+                    issues: [],
+                    bugs: {
+                        p1: [],
+                        p2: [],
+                        p3: []
+                    }
                 }
             };
             const repo = repos[githubProject.repo];
@@ -107,27 +130,34 @@ async function getProject(label, repos) {
                 if (labels.indexOf('bug') > -1) {
                     for (const priority of ['p1', 'p2', 'p3']) {
                         if (labels.indexOf(priority) > -1) {
-                            repo.todo.bugs[priority] += 1;
+                            repo.todo.bugs[priority].push(await getIssue(issue));
                         }
                     }
                 }
                 else {
-                    repo.todo.issues += 1;
-                }
-                if (issue.milestone != null &&
-                    issue.milestone.due_on) {
+                    repo.todo.issues.push(await getIssue(issue));
                 }
 
                 repo.deliveryDate = establishDeliveryDate(issue, repo.deliveryDate);
             }
             else if (issue.state === 'open') {
                 /* The issue is open and assigned */
-                repo.wip.issues += 1;
+                repo.wip.issues.push(await getIssue(issue));
                 repo.deliveryDate = establishDeliveryDate(issue, repo.deliveryDate);
             }
             else if (issue.state === 'closed') {
                 /* The issue is closed */
-                repo.done.issues += 1;
+                let labels = issue.labels.map(label => label.name);
+                if (labels.indexOf('bug') > -1) {
+                    for (const priority of ['p1', 'p2', 'p3']) {
+                        if (labels.indexOf(priority) > -1) {
+                            repo.done.bugs[priority].push(await getIssue(issue));
+                        }
+                    }
+                }
+                else {
+                    repo.done.issues.push(await getIssue(issue));
+                }
             }
         }
         return {
@@ -154,21 +184,22 @@ class FeatureTagRow extends Component {
         return (
             <div className="FeatureTag-Row">
                 <div>{ this.props.project.repo }</div>
-                <div><a href={ issueLink } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.issues }</a></div>
-                <div><a href={ p1Link } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.bugs.p1 }</a></div>
-                <div><a href={ p2Link } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.bugs.p2 }</a></div>
-                <div><a href={ p3Link } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.bugs.p3 }</a></div>
-                <div>{ this.props.project.wip.issues }</div>
-                <div>{ this.props.project.done.issues }</div>
+                <div><a href={ issueLink } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.issues.length }</a></div>
+                <div>{ this.props.project.wip.issues.length }</div>
+                <div>{ this.props.project.done.issues.length }</div>
+                <div><a href={ p1Link } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.bugs.p1.length }</a></div>
+                <div><a href={ p2Link } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.bugs.p2.length }</a></div>
+                <div><a href={ p3Link } target="_blank" rel="noopener noreferrer">{ this.props.project.todo.bugs.p3.length }</a></div>
+                <div>{ this.props.project.done.bugs.p1.length + this.props.project.done.bugs.p2.length + this.props.project.done.bugs.p3.length }</div>
                 <div className={ this.props.project.deliveryDate ? "" : "NoDate" }>{ this.props.project.deliveryDate ?
                         dateFormat(this.props.project.deliveryDate, 'yyyy-mm-dd') :
                     'n/a' }</div>
                 <div className="Completed">
-                        { (this.props.project.done.issues /
-                            (this.props.project.todo.issues +
-                             this.props.project.todo.bugs.p1 +
-                             this.props.project.wip.issues +
-                             this.props.project.done.issues) * 100).toFixed(0) }%
+                        { (this.props.project.done.issues.length /
+                            (this.props.project.todo.issues.length +
+                             this.props.project.todo.bugs.p1.length +
+                             this.props.project.wip.issues.length +
+                             this.props.project.done.issues.length) * 100).toFixed(0) }%
                 </div>
             </div>
         );
@@ -179,11 +210,12 @@ class FeatureTag extends Component {
     render() {
         let rows = this.props.project.repos.map(project => <FeatureTagRow project={ project } key={ project.repo }/>);
         let totalItems = this.props.project.repos.map(project =>
-            project.todo.issues + project.todo.bugs.p1 + project.todo.bugs.p2 + project.todo.bugs.p3 + project.wip.issues + project.done.issues)
+            project.todo.issues.length + project.todo.bugs.p1.length + project.todo.bugs.p2.length +
+            project.todo.bugs.p3.length + project.wip.issues.length + project.done.issues.length)
                 .reduce((a, b) => a + b, 0);
         console.log('totalItems', totalItems);
         let completedItems = this.props.project.repos.map(project =>
-            project.done.issues)
+            project.done.issues.length)
             .reduce((a, b) => a + b, 0);
         console.log('completedItems', completedItems);
         return (
@@ -200,6 +232,7 @@ class FeatureTag extends Component {
                     <div className="FeatureTag-Column Bugs"></div>
                     <div className="FeatureTag-Column Bugs"></div>
                     <div className="FeatureTag-Column Bugs"></div>
+                    <div className="FeatureTag-Column Bugs"></div>
                     <div className="FeatureTag-Column"></div>
                     <div className="FeatureTag-Column"></div>
                     <div className="FeatureTag-Row FeatureTag-TableHeader">
@@ -210,6 +243,7 @@ class FeatureTag extends Component {
                         <div>P1</div>
                         <div>P2</div>
                         <div>P3</div>
+                        <div>Done</div>
                         <div>Delivery</div>
                         <div></div>
                     </div>
