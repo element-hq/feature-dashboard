@@ -4,7 +4,7 @@ import Octokit from '@octokit/rest';
 import queryString from 'query-string';
 import './App.css';
 
-const TOKEN = 'd42694727ea90677526320b1ef4f18ce1040f408'; /* Github personal access token goes here (for now) */
+const TOKEN = ''; /* Github personal access token goes here (for now) */
 
 let options = {};
 if (TOKEN) {
@@ -38,7 +38,8 @@ async function processIssue(issue) {
                 name: label.name
             }
         }),
-        progress: progress
+        progress: progress,
+        assignees: issue.assignees
     }
 }
 
@@ -205,16 +206,34 @@ class FeatureTagRow extends Component {
             </a></div>
         );
 
+        let wipIssueSearch = [...new Set(repoFeature.wip.issues
+            .map(issue => issue.assignees.map(assignee => assignee.login))
+            .reduce((a, b) => a.concat(b), []))]
+            .map(assignee => `assignee:${assignee}`)
+            .join('+');
+
+        let wipBugSearch = [...new Set(repoFeature.wip.p1bugs.concat(repoFeature.wip.p2bugs).concat(repoFeature.wip.p3bugs)
+            .map(issue => issue.assignees.map(assignee => assignee.login))
+            .reduce((a, b) => a.concat(b), []))]
+            .map(assignee => `assignee:${assignee}`)
+            .join('+');
+
         return (
             <div className="FeatureTag-Row">
                 <div>{ repoFeature.repo }</div>
                 <div><a href={ issueLink } target="_blank" rel="noopener noreferrer">{ repoFeature.todo.issues.length }</a></div>
-                <div>{ repoFeature.wip.issues.length }</div>
+                <div><a href={ `${urlStem}is%3Aopen+label%3Afeature+${wipIssueSearch}` } target="_blank" rel="noopener noreferrer">{
+                    repoFeature.wip.issues.length 
+                }</a></div>
                 <div><a href={ `${urlStem}label%3Afeature+is%3aclosed` } target="_blank" rel="noopener noreferrer">{
                     repoFeature.done.issues.length
                 }</a></div>
                 { bugLinks }
-                <div>{ repoFeature.wip.p1bugs.length + repoFeature.wip.p2bugs.length + repoFeature.wip.p3bugs.length }</div>
+                <div><a href={ `${urlStem}is%3Aopen+label%3Abug+${wipBugSearch}` } target="_blank" rel="noopener noreferrer">{
+                    repoFeature.wip.p1bugs.length +
+                    repoFeature.wip.p2bugs.length +
+                    repoFeature.wip.p3bugs.length
+                }</a></div>
                 <div><a href={ `${urlStem}label%3Abug+is%3aclosed`} target="_blank" rel="noopener noreferrer">{
                     repoFeature.done.p1bugs.length +
                     repoFeature.done.p2bugs.length +
