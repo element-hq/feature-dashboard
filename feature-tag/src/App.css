@@ -15,7 +15,7 @@ body {
 }
 
 .FeatureTag-Header {
-    margin-bottom: 12px;
+    margin-bottom: 22px;
     white-space: nowrap;
     margin-top: 4px;
     font-size: 32px;
@@ -118,3 +118,11 @@ body {
     width: 33px;
 }
 
+.MetaTitleHolder {
+    position: absolute;
+}
+
+.MetaTitle {
+    position: relative;
+    top: -20px;
+}

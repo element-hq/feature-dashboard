@@ -63,17 +63,21 @@ async function getTaskCount(issue) {
 
 function establishDeliveryDate(issue, deliveryDate) {
     if (deliveryDate === null) {
+        console.log('Already null, returning null');
         return null;
     }
     else if (issue.milestone && issue.milestone.due_on) {
         if (deliveryDate === undefined) {
+            console.log('Undeefined, so defining to', new Date(issue.milestone.due_on));
             return new Date(issue.milestone.due_on);
         }
         else {
+            console.log('Defined, picking max');
             return Math.max(deliveryDate, new Date(issue.milestone.due_on));
         }
     }
     else {
+        console.log('falling through, returnuing null');
         return null;
     }
 }
@@ -157,8 +161,8 @@ async function getFeature(label, searchRepos) {
             let type = getType(issue);
 
             repo[state][type].push(await processIssue(issue));
-            if (state === 'open') {
-                 repo.deliveryDate = establishDeliveryDate(issue, repo.deliveryDate);
+            if (state !== 'done') {
+                repo.deliveryDate = establishDeliveryDate(issue, repo.deliveryDate);
             }
 
         }
@@ -274,10 +278,10 @@ class FeatureTag extends Component {
                     <div className="FeatureTag-Column"></div>
                     <div className="FeatureTag-Row FeatureTag-TableHeader">
                         <div>Repo</div>
-                        <div>Todo</div>
+                        <div><span className="MetaTitleHolder"><span className="MetaTitle">Planned Work</span></span>Todo</div>
                         <div>WIP</div>
                         <div>Done</div>
-                        <div>P1</div>
+                        <div><span className="MetaTitleHolder"><span className="MetaTitle">Bugs</span></span>P1</div>
                         <div>P2</div>
                         <div>P3</div>
                         <div>WIP</div>
@@ -308,6 +312,7 @@ class App extends Component {
         if (!Array.isArray(query.repo)) {
             query.repo = [query.repo];
         }
+        document.title = query.label;
         let feature = await getFeature(query.label, query.repo);
         this.setState({feature: feature}) 
     }
