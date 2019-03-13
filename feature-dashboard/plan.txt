@@ -1,3 +1,0 @@
-We want a component, that, provided with the right input, will render the apropriate:
- - rows
- - feature dashboard widget
