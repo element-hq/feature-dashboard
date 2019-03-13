@@ -191,6 +191,7 @@ class FeatureTagRow extends Component {
     getAssigneesFilter(issues) {
         /* TODO: There's a bug if you search WIP of 0, because it doesn't add any assignees to the filter (and returns
          * > 0 results). We really need a makeWIPLink method that returns no link at all if there are no items in flight.
+         * */
         let filter = issues.map(issue => issue.assignees.map(assignee => assignee.login))
             .reduce((a, b) => a.concat(b), [])
             .map(assignee => `assignee:${assignee}`)
