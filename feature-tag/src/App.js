@@ -64,21 +64,17 @@ async function getTaskCount(issue) {
 
 function establishDeliveryDate(issue, deliveryDate) {
     if (deliveryDate === null) {
-        console.log('Already null, returning null');
         return null;
     }
     else if (issue.milestone && issue.milestone.due_on) {
         if (deliveryDate === undefined) {
-            console.log('Undeefined, so defining to', new Date(issue.milestone.due_on));
             return new Date(issue.milestone.due_on);
         }
         else {
-            console.log('Defined, picking max');
             return Math.max(deliveryDate, new Date(issue.milestone.due_on));
         }
     }
     else {
-        console.log('falling through, returnuing null');
         return null;
     }
 }
@@ -192,54 +188,57 @@ class FeatureTagRow extends Component {
         return (completed / total * 100).toFixed(0);
     }
 
+    getAssigneesFilter(issues) {
+        /* TODO: There's a bug if you search WIP of 0, because it doesn't add any assignees to the filter (and returns
+         * > 0 results). We really need a makeWIPLink method that returns no link at all if there are no items in flight.
+        let filter = issues.map(issue => issue.assignees.map(assignee => assignee.login))
+            .reduce((a, b) => a.concat(b), [])
+            .map(assignee => `assignee:${assignee}`)
+            .join('+');
+        if (!filter) {
+            filter = 'no:assignee';
+        }
+        return filter;
+    }
+
     render() {
         let repoFeature = this.props.repoFeature;
 
-        let urlStem = `https://github.com/${repoFeature.repo}/issues?utf8=%E2%9C%93&q=label%3A${repoFeature.label}+is%3Aissue+`
-        let issueLink = `${urlStem}is%3Aopen+no%3Aassignee+label%3Afeature`;
+        let githubSearch = `https://github.com/${repoFeature.repo}/issues?utf8=%E2%9C%93&q=label%3A${repoFeature.label}+is%3Aissue+`
+        let githubAdvancedSearch = `https://github.com/search?utf8=%E2%9C%93&q=is%3Aopen+repo%3A${repoFeature.repo}+label%3A${repoFeature.label}+`;
+        let githubAdvancedSearchEnd = `&type=Issues&ref=advsearch&l=&l=+`;
+        let issueLink = `${githubSearch}is%3Aopen+no%3Aassignee+label%3Afeature`;
 
         let bugLinks = [1, 2, 3].map(priority =>
             <div key={ priority }><a href={
-                `${urlStem}is%3Aopen+no%3Aassignee+label%3Ap${priority}+label%3Abug`
+                `${githubSearch}is%3Aopen+no%3Aassignee+label%3Ap${priority}+label%3Abug`
             } target="_blank" rel="noopener noreferrer">
             { repoFeature.todo[`p${priority}bugs`].length }
             </a></div>
         );
 
-        let wipIssueSearch = [...new Set(repoFeature.wip.issues
-            .map(issue => issue.assignees.map(assignee => assignee.login))
-            .reduce((a, b) => a.concat(b), []))]
-            .map(assignee => `assignee:${assignee}`)
-            .join('+');
-
-        let wipBugSearch = [...new Set(repoFeature.wip.p1bugs.concat(repoFeature.wip.p2bugs).concat(repoFeature.wip.p3bugs)
-            .map(issue => issue.assignees.map(assignee => assignee.login))
-            .reduce((a, b) => a.concat(b), []))]
-            .map(assignee => `assignee:${assignee}`)
-            .join('+');
-
         return (
             <div className="FeatureTag-Row">
                 <div>{ repoFeature.repo }</div>
                 <div><a href={ issueLink } target="_blank" rel="noopener noreferrer">{ repoFeature.todo.issues.length }</a></div>
-                <div><a href={ `${urlStem}is%3Aopen+label%3Afeature+${wipIssueSearch}` } target="_blank" rel="noopener noreferrer">{
+                <div><a href={ `${githubAdvancedSearch}label%3Afeature+${this.getAssigneesFilter(repoFeature.wip.issues)}${githubAdvancedSearchEnd}` } target="_blank" rel="noopener noreferrer" >{
                     repoFeature.wip.issues.length 
                 }</a></div>
-                <div><a href={ `${urlStem}label%3Afeature+is%3aclosed` } target="_blank" rel="noopener noreferrer">{
+                <div><a href={ `${githubSearch}label%3Afeature+is%3aclosed` } target="_blank" rel="noopener noreferrer">{
                     repoFeature.done.issues.length
                 }</a></div>
                 { bugLinks }
-                <div><a href={ `${urlStem}is%3Aopen+label%3Abug+${wipBugSearch}` } target="_blank" rel="noopener noreferrer">{
+                <div><a href={ `${githubAdvancedSearch}label%3Abug+${this.getAssigneesFilter(repoFeature.wip.p1bugs.concat(repoFeature.wip.p2bugs).concat(repoFeature.wip.p3bugs))}${githubAdvancedSearchEnd}` } target="_blank" rel="noopener noreferrer" >{
                     repoFeature.wip.p1bugs.length +
                     repoFeature.wip.p2bugs.length +
                     repoFeature.wip.p3bugs.length
                 }</a></div>
-                <div><a href={ `${urlStem}label%3Abug+is%3aclosed`} target="_blank" rel="noopener noreferrer">{
+                <div><a href={ `${githubSearch}label%3Abug+is%3aclosed`} target="_blank" rel="noopener noreferrer">{
                     repoFeature.done.p1bugs.length +
                     repoFeature.done.p2bugs.length +
                     repoFeature.done.p3bugs.length
                 }</a></div>
-                <div><a href={ `${urlStem}-label%3Afeature+-label%3Ap1+-label%3Ap2+-label%3Ap3+is%3Aopen` } target="_blank" rel="noopener noreferrer">{
+                <div><a href={ `${githubSearch}-label%3Afeature+-label%3Ap1+-label%3Ap2+-label%3Ap3+is%3Aopen` } target="_blank" rel="noopener noreferrer">{
                     repoFeature.todo.others.length +
                     repoFeature.wip.others.length
                 }</a></div>
@@ -304,7 +303,7 @@ class FeatureTag extends Component {
                         <div>P2</div>
                         <div>P3</div>
                         <div>WIP</div>
-                        <div>Done</div>
+                        <div>Fixed</div>
                         <div>Other</div>
                         <div>Delivery</div>
                         <div></div>
