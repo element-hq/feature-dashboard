@@ -160,7 +160,7 @@ async function getFeature(label, searchRepos) {
             let type = getType(issue);
 
             repo[state][type].push(await processIssue(issue));
-            if (state !== 'done') {
+            if (state !== 'done' && ['issues', 'p1bugs'].includes(type)) {
                 repo.deliveryDate = establishDeliveryDate(issue, repo.deliveryDate);
             }
 
