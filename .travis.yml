@@ -1,6 +1,5 @@
 language: node_js
-node_js:
-  test:
+script: 'true'
 deploy:
   provider: pages
   skip-cleanup: true
