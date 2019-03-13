@@ -43,6 +43,7 @@ async function processIssue(issue) {
     }
 }
 
+/*
 async function getTaskCount(issue) {
     let githubProject = getGithubProject(issue);
     let options = octokit.issues.listComments.endpoint.merge({
@@ -61,6 +62,7 @@ async function getTaskCount(issue) {
         outstanding: outstanding
     }
 }
+*/
 
 function establishDeliveryDate(issue, deliveryDate) {
     if (deliveryDate === null) {
