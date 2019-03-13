@@ -2,6 +2,7 @@
   "name": "feature-dashboard",
   "version": "0.1.0",
   "private": true,
+  "homepage" : "http://lampholder.github.io/feature-dashboard",
   "dependencies": {
     "@octokit/rest": "^16.16.3",
     "dateformat": "^3.0.3",

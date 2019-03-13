@@ -1,4 +1,9 @@
 language: node_js
+cache:
+  directories:
+  - node_modules
+  - packages/create-react-app/node_modules
+  - packages/react-scripts/node_modules
 script:
   - npm run build
 deploy:
