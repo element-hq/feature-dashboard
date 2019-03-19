@@ -39,6 +39,7 @@ async function processIssue(issue) {
             }
         }),
         progress: progress,
+        number: issue.number,
         assignees: issue.assignees
     }
 }
@@ -194,8 +195,8 @@ class FeatureTagRow extends Component {
         /* TODO: There's a bug if you search WIP of 0, because it doesn't add any assignees to the filter (and returns
          * > 0 results). We really need a makeWIPLink method that returns no link at all if there are no items in flight.
          * */
-        let filter = issues.map(issue => issue.assignees.map(assignee => assignee.login))
-            .reduce((a, b) => a.concat(b), [])
+        let filter = [...new Set(issues.map(issue => issue.assignees.map(assignee => assignee.login))
+            .reduce((a, b) => a.concat(b), []))]
             .map(assignee => `assignee:${assignee}`)
             .join('+');
         if (!filter) {
@@ -204,47 +205,168 @@ class FeatureTagRow extends Component {
         return filter;
     }
 
+    makeLink(repo, label, q, issues) {
+        if (!q) {
+            q = []
+        }
+        let advanced = false;
+
+        if (q.filter(item => item.join('-') === 'assignee-*').length > 0) {
+            /* If the list of labels includes ['assignee', '*'], we'll strip it from the
+             * list and implement our search link using github's _advanced_ search
+             * functionality instead. This is because assignee:* doesn't reliably work
+             * with regular search (or advanced), so instead we have to apply the other
+             * search criteria _and_ a list of assignee:x where x all the assignees of
+             * all the issues which have assignees. Is that clear? Good, great. */
+            q = q.filter(item => item.join('-') !== 'assignee-*');
+            advanced = true;
+        }
+        q.push(['label', label]);
+
+        let query = [];
+        for (const searchCriteria of q) {
+            query.push(`${searchCriteria[0]}%3A${searchCriteria[1]}`)
+        }
+        let queryString = query.join('+');
+
+        let searchUrl = "";
+        if (advanced) {
+            let assigneesFilter = this.getAssigneesFilter(issues);
+            searchUrl = `https://github.com/search?utf8=%E2%9C%93&q=repo%3A${repo}+${queryString}+${assigneesFilter}&type=Issues&ref=advsearch&l=&l=+`;
+        }
+        else {
+            searchUrl = `https://github.com/${repo}/issues?utf8=%E2%9C%93&q=${queryString}`;
+        }
+
+        let issueNumbers = issues.map(x => `#${x.number}`).reduce((a, b) => a.concat(b), []);
+        if (issues.length > 0) {
+            console.log(issues);
+        }
+        return (
+            <a href={ searchUrl } target="_blank" rel="noopener noreferrer" title={ issueNumbers.join("\n") }>
+                { issueNumbers.length }
+            </a>
+        );
+    }
+
     render() {
         let repoFeature = this.props.repoFeature;
-
-        let githubSearch = `https://github.com/${repoFeature.repo}/issues?utf8=%E2%9C%93&q=label%3A${repoFeature.label}+is%3Aissue+`
-        let githubAdvancedSearch = `https://github.com/search?utf8=%E2%9C%93&q=is%3Aopen+repo%3A${repoFeature.repo}+label%3A${repoFeature.label}+`;
-        let githubAdvancedSearchEnd = `&type=Issues&ref=advsearch&l=&l=+`;
-        let issueLink = `${githubSearch}is%3Aopen+no%3Aassignee+label%3Afeature`;
-
-        let bugLinks = [1, 2, 3].map(priority =>
-            <div key={ priority }><a href={
-                `${githubSearch}is%3Aopen+no%3Aassignee+label%3Ap${priority}+label%3Abug`
-            } target="_blank" rel="noopener noreferrer">
-            { repoFeature.todo[`p${priority}bugs`].length }
-            </a></div>
-        );
 
         return (
             <div className="FeatureTag-Row">
                 <div>{ repoFeature.repo }</div>
-                <div><a href={ issueLink } target="_blank" rel="noopener noreferrer">{ repoFeature.todo.issues.length }</a></div>
-                <div><a href={ `${githubAdvancedSearch}label%3Afeature+${this.getAssigneesFilter(repoFeature.wip.issues)}${githubAdvancedSearchEnd}` } target="_blank" rel="noopener noreferrer" >{
-                    repoFeature.wip.issues.length 
-                }</a></div>
-                <div><a href={ `${githubSearch}label%3Afeature+is%3aclosed` } target="_blank" rel="noopener noreferrer">{
-                    repoFeature.done.issues.length
-                }</a></div>
-                { bugLinks }
-                <div><a href={ `${githubAdvancedSearch}label%3Abug+${this.getAssigneesFilter(repoFeature.wip.p1bugs.concat(repoFeature.wip.p2bugs).concat(repoFeature.wip.p3bugs))}${githubAdvancedSearchEnd}` } target="_blank" rel="noopener noreferrer" >{
-                    repoFeature.wip.p1bugs.length +
-                    repoFeature.wip.p2bugs.length +
-                    repoFeature.wip.p3bugs.length
-                }</a></div>
-                <div><a href={ `${githubSearch}label%3Abug+is%3aclosed`} target="_blank" rel="noopener noreferrer">{
-                    repoFeature.done.p1bugs.length +
-                    repoFeature.done.p2bugs.length +
-                    repoFeature.done.p3bugs.length
-                }</a></div>
-                <div><a href={ `${githubSearch}-label%3Afeature+-label%3Ap1+-label%3Ap2+-label%3Ap3+is%3Aopen` } target="_blank" rel="noopener noreferrer">{
-                    repoFeature.todo.others.length +
-                    repoFeature.wip.others.length
-                }</a></div>
+                <div>{
+                    this.makeLink(
+                        repoFeature.repo,
+                        repoFeature.label,
+                        [
+                            ['is', 'open'],
+                            ['no', 'assignee'],
+                            ['label', 'feature']
+                        ],
+                        repoFeature.todo.issues
+                    )
+                }</div>
+                <div>{
+                    this.makeLink(
+                        repoFeature.repo,
+                        repoFeature.label,
+                        [
+                            ['is', 'open'],
+                            ['assignee', '*'],
+                            ['label', 'feature']
+                        ],
+                        repoFeature.wip.issues
+                    )
+                }</div>
+                <div>{
+                    this.makeLink(
+                        repoFeature.repo,
+                        repoFeature.label,
+                        [
+                            ['is', 'closed'],
+                            ['label', 'feature']
+                        ],
+                        repoFeature.done.issues
+                    )
+                }</div>
+                <div>{
+                    this.makeLink(
+                        repoFeature.repo,
+                        repoFeature.label,
+                        [
+                            ['is', 'open'],
+                            ['no', 'assignee'],
+                            ['label', 'bug'],
+                            ['label', 'p1']
+                        ],
+                        repoFeature.todo.p1bugs
+                    )
+                }</div>
+                <div>{
+                    this.makeLink(
+                        repoFeature.repo,
+                        repoFeature.label,
+                        [
+                            ['is', 'open'],
+                            ['no', 'assignee'],
+                            ['label', 'bug'],
+                            ['label', 'p2']
+                        ],
+                        repoFeature.todo.p2bugs
+                    )
+                }</div>
+                <div>{
+                    this.makeLink(
+                        repoFeature.repo,
+                        repoFeature.label,
+                        [
+                            ['is', 'open'],
+                            ['no', 'assignee'],
+                            ['label', 'bug'],
+                            ['label', 'p3']
+                        ],
+                        repoFeature.todo.p3bugs
+                    )
+                }</div>
+                <div>{
+                    this.makeLink(
+                        repoFeature.repo,
+                        repoFeature.label,
+                        [
+                            ['is', 'open'],
+                            ['assignee', '*'],
+                            ['label', 'bug'],
+                        ],
+                        repoFeature.wip.p1bugs.concat(repoFeature.wip.p2bugs).concat(repoFeature.wip.p3bugs)
+                    )
+                }</div>
+                <div>{
+                    this.makeLink(
+                        repoFeature.repo,
+                        repoFeature.label,
+                        [
+                            ['is', 'closed'],
+                            ['label', 'bug'],
+                        ],
+                        repoFeature.done.p1bugs.concat(repoFeature.done.p2bugs).concat(repoFeature.done.p3bugs)
+                    )
+                }</div>
+                <div>{
+                    this.makeLink(
+                        repoFeature.repo,
+                        repoFeature.label,
+                        [
+                            ['is', 'open'],
+                            ['-label', 'feature'],
+                            ['-label', 'bug'],
+                            ['-label', 'p1'],
+                            ['-label', 'p2'],
+                            ['-label', 'p3'],
+                        ],
+                        repoFeature.todo.others.concat(repoFeature.wip.others)
+                    )
+                }</div>
                 <div className={ repoFeature.deliveryDate ? "" : "NoDate" }>{ repoFeature.deliveryDate ?
                         dateFormat(repoFeature.deliveryDate, 'yyyy-mm-dd') :
                     'n/a' }</div>
