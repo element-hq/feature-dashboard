@@ -4,16 +4,39 @@ import Octokit from '@octokit/rest';
 import queryString from 'query-string';
 import './App.css';
 
-const TOKEN = ''; /* Github personal access token goes here (for now) */
+async function getConnection() {
+    let token = localStorage.getItem('github_token');
 
-let options = {};
-if (TOKEN) {
-    options = {
-        auth: 'token ' + TOKEN
+    if (!token) {
+        return {
+            octokit: new Octokit(),
+            status: 'unauthenticated'
+        }
     }
-}
 
-const octokit = new Octokit(options);
+    let connection = undefined;
+
+    let octokit = new Octokit({
+        auth: `token ${token}`
+    });
+    await octokit.request('GET /')
+        .then(_ => {
+            connection = {
+                octokit: octokit,
+                status: 'authenticated'
+            }
+        })
+        .catch(e => {
+            if (e.name === 'HttpError' && e.status === 401) {
+                connection = {
+                    octokit: new Octokit(),
+                    status: 'invalid-credentials'
+                }
+            }
+        });
+
+    return connection;
+}
 
 function getGithubProject(issue) {
     let components = issue.repository_url.split('/');
@@ -139,7 +162,7 @@ function template(label, repo) {
     };
 }
 
-async function getFeature(label, searchRepos) {
+async function getFeature(octokit, label, searchRepos) {
     let searchString = searchRepos.map(repo => 'repo:' + repo).join(' ') + ' label:' + label + ' is:issue';
     const options = octokit.search.issuesAndPullRequests.endpoint.merge({
         q: searchString
@@ -239,9 +262,6 @@ class FeatureTagRow extends Component {
         }
 
         let issueNumbers = issues.map(x => `#${x.number}`).reduce((a, b) => a.concat(b), []);
-        if (issues.length > 0) {
-            console.log(issues);
-        }
         return (
             <a href={ searchUrl } target="_blank" rel="noopener noreferrer" title={ issueNumbers.join("\n") }>
                 { issueNumbers.length }
@@ -376,6 +396,32 @@ class FeatureTagRow extends Component {
     }
 }
 
+class TokenInput extends Component {
+
+    handleClick(e) {
+        e.preventDefault();
+        let token = prompt('Personal github token', localStorage.getItem('github_token'));
+        if (token !== null) {
+            localStorage.setItem('github_token', token);
+            window.location.reload();
+        }
+    }
+
+    render() {
+        return (
+            <div className={ `TokenInput ${this.props.status}` } 
+                onClick={ this.handleClick }
+                title={
+                    this.props.status === 'unauthenticated' ? 'Add a personal GitHub token to raise the limit of requests you can make to the API' :
+                    this.props.status === 'invalid-credentials' ? 'Your github token is invalid (fell back to unauthenticated access)' : ''
+                }>
+                { this.props.status === 'unauthenticated' ? 'Add ' : '' }Personal GitHub Token
+            </div>
+        );
+    }
+
+}
+
 class FeatureTag extends Component {
     calculatePercentCompleted(feature) {
         let counted = ['issues', 'p1bugs'];
@@ -398,7 +444,9 @@ class FeatureTag extends Component {
     }
 
     render() {
-        let rows = this.props.feature.repos.map(repo => <FeatureTagRow repoFeature={ repo } key={ repo.repo }/>);
+        let rows = this.props.feature.repos.map(repo => <FeatureTagRow repoFeature={ repo }
+            key={ repo.repo } />
+        );
 
         return (
             <div className="FeatureTag">
@@ -435,6 +483,7 @@ class FeatureTag extends Component {
                     </div>
                     { rows }
                 </div>
+                <TokenInput status={ this.props.connection.status }/>
             </div>
         );
     }
@@ -447,23 +496,29 @@ class App extends Component {
             feature: {
                 label: 'Loading...',
                 repos: []
+            },
+            connection: {
+                octokit: undefined,
+                status: 'connecting'
             }
         }
     }
 
     async componentDidMount() {
+        let connection = await getConnection();
+        this.setState({connection: connection });
         if (!Array.isArray(query.repo)) {
             query.repo = [query.repo];
         }
         document.title = query.label;
-        let feature = await getFeature(query.label, query.repo);
+        let feature = await getFeature(connection.octokit, query.label, query.repo);
         this.setState({feature: feature}) 
     }
 
     render() {
         return (
             <div className="App">
-                <FeatureTag feature={ this.state.feature } />
+                <FeatureTag feature={ this.state.feature } connection={ this.state.connection }/>
             </div>
         );
     }
