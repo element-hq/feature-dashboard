@@ -400,7 +400,7 @@ class TokenInput extends Component {
 
     handleClick(e) {
         e.preventDefault();
-        let token = prompt('Personal github token', localStorage.getItem('github_token'));
+        let token = prompt('Personal github token', localStorage.getItem('github_token') || '');
         if (token !== null) {
             localStorage.setItem('github_token', token);
             window.location.reload();
