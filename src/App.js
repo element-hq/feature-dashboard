@@ -234,23 +234,19 @@ class FeatureTagRow extends Component {
         }
         let advanced = false;
 
-        if (q.filter(item => item.join('-') === 'assignee-*').length > 0) {
+        if (q.includes('assignee:*')) {
             /* If the list of labels includes ['assignee', '*'], we'll strip it from the
              * list and implement our search link using github's _advanced_ search
              * functionality instead. This is because assignee:* doesn't reliably work
              * with regular search (or advanced), so instead we have to apply the other
              * search criteria _and_ a list of assignee:x where x all the assignees of
              * all the issues which have assignees. Is that clear? Good, great. */
-            q = q.filter(item => item.join('-') !== 'assignee-*');
+            q = q.filter(item => item !== 'assignee:*')
             advanced = true;
         }
-        q.push(['label', label]);
+        q.push(`label:${label}`);
 
-        let query = [];
-        for (const searchCriteria of q) {
-            query.push(`${searchCriteria[0]}%3A${searchCriteria[1]}`)
-        }
-        let queryString = query.join('+');
+        let queryString = q.join('+');
 
         let searchUrl = "";
         if (advanced) {
@@ -280,9 +276,9 @@ class FeatureTagRow extends Component {
                         repoFeature.repo,
                         repoFeature.label,
                         [
-                            ['is', 'open'],
-                            ['no', 'assignee'],
-                            ['label', 'feature']
+                            'is:open',
+                            'no:assignee',
+                            'label:feature'
                         ],
                         repoFeature.todo.issues
                     )
@@ -292,9 +288,9 @@ class FeatureTagRow extends Component {
                         repoFeature.repo,
                         repoFeature.label,
                         [
-                            ['is', 'open'],
-                            ['assignee', '*'],
-                            ['label', 'feature']
+                            'is:open',
+                            'assignee:*',
+                            'label:feature'
                         ],
                         repoFeature.wip.issues
                     )
@@ -304,8 +300,8 @@ class FeatureTagRow extends Component {
                         repoFeature.repo,
                         repoFeature.label,
                         [
-                            ['is', 'closed'],
-                            ['label', 'feature']
+                            'is:closed',
+                            'label:feature'
                         ],
                         repoFeature.done.issues
                     )
@@ -315,10 +311,10 @@ class FeatureTagRow extends Component {
                         repoFeature.repo,
                         repoFeature.label,
                         [
-                            ['is', 'open'],
-                            ['no', 'assignee'],
-                            ['label', 'bug'],
-                            ['label', 'p1']
+                            'is:open',
+                            'no:assignee',
+                            'label:bug',
+                            'label:p1'
                         ],
                         repoFeature.todo.p1bugs
                     )
@@ -328,10 +324,10 @@ class FeatureTagRow extends Component {
                         repoFeature.repo,
                         repoFeature.label,
                         [
-                            ['is', 'open'],
-                            ['no', 'assignee'],
-                            ['label', 'bug'],
-                            ['label', 'p2']
+                            'is:open',
+                            'no:assignee',
+                            'label:bug',
+                            'label:p2'
                         ],
                         repoFeature.todo.p2bugs
                     )
@@ -341,10 +337,10 @@ class FeatureTagRow extends Component {
                         repoFeature.repo,
                         repoFeature.label,
                         [
-                            ['is', 'open'],
-                            ['no', 'assignee'],
-                            ['label', 'bug'],
-                            ['label', 'p3']
+                            'is:open',
+                            'no:assignee',
+                            'label:bug',
+                            'label:p3'
                         ],
                         repoFeature.todo.p3bugs
                     )
@@ -354,9 +350,9 @@ class FeatureTagRow extends Component {
                         repoFeature.repo,
                         repoFeature.label,
                         [
-                            ['is', 'open'],
-                            ['assignee', '*'],
-                            ['label', 'bug'],
+                            'is:open',
+                            'assignee:*',
+                            'label:bug'
                         ],
                         repoFeature.wip.p1bugs.concat(repoFeature.wip.p2bugs).concat(repoFeature.wip.p3bugs)
                     )
@@ -366,8 +362,8 @@ class FeatureTagRow extends Component {
                         repoFeature.repo,
                         repoFeature.label,
                         [
-                            ['is', 'closed'],
-                            ['label', 'bug'],
+                            'is:closed',
+                            'label:bug'
                         ],
                         repoFeature.done.p1bugs.concat(repoFeature.done.p2bugs).concat(repoFeature.done.p3bugs)
                     )
@@ -376,14 +372,7 @@ class FeatureTagRow extends Component {
                     this.makeLink(
                         repoFeature.repo,
                         repoFeature.label,
-                        [
-                            ['is', 'open'],
-                            ['-label', 'feature'],
-                            ['-label', 'bug'],
-                            ['-label', 'p1'],
-                            ['-label', 'p2'],
-                            ['-label', 'p3'],
-                        ],
+                        ['is:open'].concat(repoFeature.todo.others.concat(repoFeature.wip.others).map(issue => issue.number)),
                         repoFeature.todo.others.concat(repoFeature.wip.others)
                     )
                 }</div>
