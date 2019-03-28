@@ -126,8 +126,10 @@ function getType(issue) {
                 return `${priority}bugs`;
             }
         }
+        return `p1bugs`; // If the bug isn't prioritised, counting it as P1 will encourage
+                         // prioritisation.
     }
-    else if (labels.includes('feature')) {
+    else if (labels.includes('feature') || labels.includes('enhancement')) {
         return 'issues';
     }
     return 'others';
@@ -229,6 +231,11 @@ class FeatureTagRow extends Component {
     }
 
     makeLink(repo, label, q, issues) {
+        if (issues.length === 0) {
+            return (
+                <span>0</span>
+            );
+        }
         if (!q) {
             q = []
         }
