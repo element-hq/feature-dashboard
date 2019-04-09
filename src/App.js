@@ -277,7 +277,8 @@ class FeatureTagRow extends Component {
 
         return (
             <div className="FeatureTag-Row">
-                <div>{ repoFeature.repo }</div>
+                <div><a href={ `https://github.com/${ repoFeature.repo }/issues` }>{ repoFeature.repo }</a></div>
+
                 <div>{
                     this.makeLink(
                         repoFeature.repo,
