@@ -278,7 +278,6 @@ class FeatureTagRow extends Component {
         return (
             <div className="FeatureTag-Row">
                 <div><a href={ `https://github.com/${ repoFeature.repo }/issues` }>{ repoFeature.repo }</a></div>
-
                 <div>{
                     this.makeLink(
                         repoFeature.repo,
@@ -322,7 +321,10 @@ class FeatureTagRow extends Component {
                             'is:open',
                             'no:assignee',
                             'label:bug',
-                            'label:p1'
+                            '-label:p2', /* Any bug not flagged as p2-5 is p1 */
+                            '-label:p3', /* This is weird, but encourages the triaging */
+                            '-label:p4', /* of unprioritised bugs. */
+                            '-label:p5'
                         ],
                         repoFeature.todo.p1bugs
                     )
