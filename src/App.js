@@ -488,7 +488,7 @@ class FeatureTag extends Component {
     }
 }
 
-class App extends Component {
+class Summary extends Component {
     constructor(props) {
         super();
         this.state = {
@@ -521,6 +521,33 @@ class App extends Component {
             </div>
         );
     }
+}
+
+class Detail extends Component {
+
+    render() {
+        return (
+            <div>I'm... a detailed report.</div>
+        );
+    }
+
+}
+
+class App extends Component {
+
+    render() {
+        if (query.view === 'detail') {
+            return (
+                <Detail />
+            );
+        }
+        else {
+            return (
+                <Summary />
+            );
+        }
+    }
+
 }
 
 export default App;
