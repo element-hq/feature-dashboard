@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { BrowserRouter as Router, Route } from "react-router-dom";
 import dateFormat from 'dateformat';
 import Octokit from '@octokit/rest';
 import queryString from 'query-string';
@@ -523,11 +524,11 @@ class Summary extends Component {
     }
 }
 
-class Detail extends Component {
+class Plan extends Component {
 
     render() {
         return (
-            <div>I'm... a detailed report.</div>
+            <div>I'm... a detailed plan.</div>
         );
     }
 
@@ -536,16 +537,13 @@ class Detail extends Component {
 class App extends Component {
 
     render() {
-        if (query.view === 'detail') {
-            return (
-                <Detail />
-            );
-        }
-        else {
-            return (
-                <Summary />
-            );
-        }
+        return (
+            <Router>
+                <Route path="/" exact component={ Summary } />
+                <Route path="/summary" component={ Summary } />
+                <Route path="/plan" component={ Plan } />
+            </Router>
+        );
     }
 
 }
