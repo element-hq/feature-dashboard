@@ -5,6 +5,7 @@ import Octokit from '@octokit/rest';
 import queryString from 'query-string';
 
 import FailWhale from './components/Fail';
+import Plan from './components/Plan';
 import './App.css';
 
 async function getConnection() {
@@ -521,17 +522,6 @@ class Summary extends Component {
         );
     }
 }
-
-class Plan extends Component {
-
-    render() {
-        return (
-            <div>I'm... a detailed plan.</div>
-        );
-    }
-
-}
-
 
 /* 
  * Legacy links to this tool just passed query params to the root:
