@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { BrowserRouter as Router, Route } from "react-router-dom";
+import { HashRouter as Router, Route, Switch } from "react-router-dom";
 import dateFormat from 'dateformat';
 import Octokit from '@octokit/rest';
 import queryString from 'query-string';
@@ -198,8 +198,6 @@ async function getFeature(octokit, label, searchRepos) {
         }
     });
 }
-
-let query = queryString.parse(window.location.search);
 
 class FeatureTagRow extends Component {
     calculatePercentCompleted(repoFeature) {
@@ -505,6 +503,7 @@ class Summary extends Component {
     }
 
     async componentDidMount() {
+        let query = queryString.parse(this.props.location.search);
         let connection = await getConnection();
         this.setState({connection: connection });
         if (!Array.isArray(query.repo)) {
@@ -534,14 +533,67 @@ class Plan extends Component {
 
 }
 
+class FailWhale extends Component {
+
+    render() {
+        return (
+            <pre>
+                {`
+    ▄██████████████▄▐█▄▄▄▄█▌
+    ██████▌▄▌▄▐▐▌███▌▀▀██▀▀
+    ████▄█▌▄▌▄▐▐▌▀███▄▄█▌
+    ▄▄▄▄▄██████████████
+
+    Please what means "`}
+            { Array.join(
+                this.props.location.pathname.match(/.{1,36}/g),
+                '\n                       ')
+            }"?
+            </pre>
+        );
+    }
+}
+
+/* 
+ * Legacy links to this tool just passed query params to the root:
+ *
+ * http://host/?repo=example-org/example-repo&...
+ *
+ * I want to redirect those links to the summary view, but I wasn't able to
+ * make ReactRouter execute the redirect without making a mess of the query 
+ * params:
+ *
+ * http://host/?repo=... -> http://host/?repo=...#/summary
+ *
+ * Crucially, after the ReactRouter redirect, the query params were no longer
+ * accessible to `this.props.location.search`. So instead we're taking matters
+ * into our own hands and wrestling `window.location.replace` directly,
+ * preserving the query params in the destination:
+ *
+ * http://host/?repo=... -> https://host/#/summary?repo=...
+ */
+class RedirectLegacy extends Component {
+
+    render() {
+        window.location.replace(`${window.location.pathname}#/summary${ window.location.search }`);
+        return (
+            <p>Redirecting...</p>
+        );
+    }
+
+}
+
 class App extends Component {
 
     render() {
         return (
             <Router>
-                <Route path="/" exact component={ Summary } />
-                <Route path="/summary" component={ Summary } />
-                <Route path="/plan" component={ Plan } />
+                <Switch>
+                    <Route path="/summary" component={ Summary } />
+                    <Route path="/plan" component={ Plan } />
+                    <Route exact path="/" component= { RedirectLegacy } />
+                    <Route component={ FailWhale } />
+                </Switch>
             </Router>
         );
     }
