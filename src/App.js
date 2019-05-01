@@ -6,7 +6,7 @@ import queryString from 'query-string';
 
 import FailWhale from './components/Fail';
 import Plan from './components/Plan';
-import './App.css';
+import './feature-dashboard.css';
 
 async function getConnection() {
     let token = localStorage.getItem('github_token');
