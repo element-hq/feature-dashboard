@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-class FailWhale extends Component {
+class Fail extends Component {
 
     render() {
         return (
@@ -21,4 +21,4 @@ class FailWhale extends Component {
     }
 }
 
-export default FailWhale;
+export default Fail;
