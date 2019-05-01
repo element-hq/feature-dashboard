@@ -3,6 +3,8 @@ import { HashRouter as Router, Route, Switch } from "react-router-dom";
 import dateFormat from 'dateformat';
 import Octokit from '@octokit/rest';
 import queryString from 'query-string';
+
+import FailWhale from './components/Fail';
 import './App.css';
 
 async function getConnection() {
@@ -216,9 +218,6 @@ class FeatureTagRow extends Component {
     }
 
     getAssigneesFilter(issues) {
-        /* TODO: There's a bug if you search WIP of 0, because it doesn't add any assignees to the filter (and returns
-         * > 0 results). We really need a makeWIPLink method that returns no link at all if there are no items in flight.
-         * */
         let filter = [...new Set(issues.map(issue => issue.assignees.map(assignee => assignee.login))
             .reduce((a, b) => a.concat(b), []))]
             .map(assignee => `assignee:${assignee}`)
@@ -533,26 +532,6 @@ class Plan extends Component {
 
 }
 
-class FailWhale extends Component {
-
-    render() {
-        return (
-            <pre>
-                {`
-    ▄██████████████▄▐█▄▄▄▄█▌
-    ██████▌▄▌▄▐▐▌███▌▀▀██▀▀
-    ████▄█▌▄▌▄▐▐▌▀███▄▄█▌
-    ▄▄▄▄▄██████████████
-
-    Please what means "`}
-            { Array.join(
-                this.props.location.pathname.match(/.{1,36}/g),
-                '\n                       ')
-            }"?
-            </pre>
-        );
-    }
-}
 
 /* 
  * Legacy links to this tool just passed query params to the root:
