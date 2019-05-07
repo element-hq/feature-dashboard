@@ -74,7 +74,7 @@ class Issue {
     constructor(githubIssue) {
 
         this.githubIssue = githubIssue;
-        this.url = githubIssue.url;
+        this.url = githubIssue.html_url;
         this.labels = githubIssue.labels.map(label => {
             return {
                 color: label.color,
