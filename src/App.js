@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { HashRouter as Router, Route, Switch } from "react-router-dom";
 import queryString from 'query-string';
+import HashChange from 'react-hashchange';
 
 import DashboardUtils from './DashboardUtils';
 import Summary from './components/Summary';
@@ -15,7 +16,7 @@ class App extends Component {
         super();
         this.state = {
             feature: {
-                label: 'Loading...',
+                labels: ['Loading...'],
                 repos: []
             },
             connectionStatus: 'connecting'
@@ -36,40 +37,50 @@ class App extends Component {
             if (!Array.isArray(query.repo)) {
                 query.repo = [query.repo];
             }
+            if (!Array.isArray(query.label)) {
+                query.label = [query.label];
+            }
 
             let connection = await Github.getConnection();
             this.setState({connectionStatus: connection.status });
 
-            document.title = query.label;
+            document.title = query.label.join(' ');
 
-            let feature = await Github.getIssues(connection.octokit, query.label, query.repo);
-            feature = await DashboardUtils.generateSummary(feature, query.label, query.repo);
+            let feature = await DashboardUtils.generateSummary(
+                await Github.getIssues(connection.octokit, query.label, query.repo),
+                query.label, query.repo
+            );
             this.setState({feature: feature})
         }
     }
 
     render() {
         return (
-            <Router>
-                <Switch>
-                    <Route path="/summary"
-                        render={ props => <Summary 
-                            { ...props }
-                            feature={ this.state.feature }
-                            connectionStatus={ this.state.connectionStatus }
-                        /> }
-                    />
-                    <Route path="/plan" 
-                        render={ props => <Plan 
-                            { ...props }
-                            feature={ this.state.feature }
-                            connectionStatus={ this.state.connectionStatus }
-                        /> }
-                    />
-                    <Route exact path="/" component= { RedirectLegacy } />
-                    <Route component={ Fail } />
-                </Switch>
-            </Router>
+            <div>
+                <HashChange onChange={hash => {
+                    window.location.reload();
+                }} />
+                <Router>
+                    <Switch>
+                        <Route path="/summary"
+                            render={ props => <Summary 
+                                { ...props }
+                                feature={ this.state.feature }
+                                connectionStatus={ this.state.connectionStatus }
+                            /> }
+                        />
+                        <Route path="/plan" 
+                            render={ props => <Plan 
+                                { ...props }
+                                feature={ this.state.feature }
+                                connectionStatus={ this.state.connectionStatus }
+                            /> }
+                        />
+                        <Route exact path="/" component= { RedirectLegacy } />
+                        <Route component={ Fail } />
+                    </Switch>
+                </Router>
+            </div>
         );
     }
 

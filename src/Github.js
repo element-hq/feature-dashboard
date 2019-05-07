@@ -36,9 +36,9 @@ class Github {
         return connection;
     }
 
-    static async getIssues(octokit, label, searchRepos) {
+    static async getIssues(octokit, labels, searchRepos) {
         let searchString = searchRepos.map(repo => 'repo:' + repo)
-            .join(' ') + ' label:' + label + ' is:issue';
+            .join(' ') + ' ' + labels.map(label => `label:${label}`).join(' ') + ' is:issue';
 
         const options = octokit.search.issuesAndPullRequests.endpoint.merge({
             q: searchString

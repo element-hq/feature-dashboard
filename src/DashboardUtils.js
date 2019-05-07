@@ -38,9 +38,9 @@ class DashboardUtils {
     }
 
 
-    static template(label, repo) {
+    static template(labels, repo) {
         return {
-            label: label,
+            labels: labels,
             repo: repo,
             deliveryDate: undefined,
             todo: {
@@ -68,10 +68,10 @@ class DashboardUtils {
     }
 
 
-    static async generateSummary(issues, label, searchRepos) { //octokit, label, searchRepos) {
+    static async generateSummary(issues, labels, searchRepos) { //octokit, label, searchRepos) {
         const repos = {};
         for (const repo of searchRepos) {
-            repos[repo] = this.template(label, repo);
+            repos[repo] = this.template(labels, repo);
         }
 
         for (const issue of issues) {
@@ -85,7 +85,7 @@ class DashboardUtils {
 
         }
         return {
-            label: label,
+            labels: labels,
             repos: Object.values(repos)
         }
     }

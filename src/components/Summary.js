@@ -30,7 +30,7 @@ class SummaryRow extends Component {
         return filter;
     }
 
-    makeLink(repo, label, q, issues) {
+    makeLink(repo, labels, q, issues) {
         if (issues.length === 0) {
             return (
                 <span>0</span>
@@ -51,7 +51,7 @@ class SummaryRow extends Component {
             q = q.filter(item => item !== 'assignee:*')
             advanced = true;
         }
-        q.push(`label:${label}`);
+        q = q.concat(labels.map(label => `label:${label}`));
 
         let queryString = q.join('+');
 
@@ -81,7 +81,7 @@ class SummaryRow extends Component {
                 <div>{
                     this.makeLink(
                         repoFeature.repo,
-                        repoFeature.label,
+                        repoFeature.labels,
                         [
                             'is:open',
                             'no:assignee',
@@ -93,7 +93,7 @@ class SummaryRow extends Component {
                 <div>{
                     this.makeLink(
                         repoFeature.repo,
-                        repoFeature.label,
+                        repoFeature.labels,
                         [
                             'is:open',
                             'assignee:*',
@@ -105,7 +105,7 @@ class SummaryRow extends Component {
                 <div>{
                     this.makeLink(
                         repoFeature.repo,
-                        repoFeature.label,
+                        repoFeature.labels,
                         [
                             'is:closed',
                             'label:feature'
@@ -116,7 +116,7 @@ class SummaryRow extends Component {
                 <div>{
                     this.makeLink(
                         repoFeature.repo,
-                        repoFeature.label,
+                        repoFeature.labels,
                         [
                             'is:open',
                             'no:assignee',
@@ -132,7 +132,7 @@ class SummaryRow extends Component {
                 <div>{
                     this.makeLink(
                         repoFeature.repo,
-                        repoFeature.label,
+                        repoFeature.labels,
                         [
                             'is:open',
                             'no:assignee',
@@ -145,7 +145,7 @@ class SummaryRow extends Component {
                 <div>{
                     this.makeLink(
                         repoFeature.repo,
-                        repoFeature.label,
+                        repoFeature.labels,
                         [
                             'is:open',
                             'no:assignee',
@@ -158,7 +158,7 @@ class SummaryRow extends Component {
                 <div>{
                     this.makeLink(
                         repoFeature.repo,
-                        repoFeature.label,
+                        repoFeature.labels,
                         [
                             'is:open',
                             'assignee:*',
@@ -170,7 +170,7 @@ class SummaryRow extends Component {
                 <div>{
                     this.makeLink(
                         repoFeature.repo,
-                        repoFeature.label,
+                        repoFeature.labels,
                         [
                             'is:closed',
                             'label:bug'
@@ -224,7 +224,7 @@ class Summary extends Component {
         return (
             <div className="Summary">
                 <div className="Summary-Header">
-                    <div className="Label">{ this.props.feature.label }</div>
+                    <div className="Label">{ this.props.feature.labels.join(' ') }</div>
                     <div className="PercentComplete">{ this.calculatePercentCompleted(this.props.feature) }%</div>
                 </div>
                 <div className="Summary-Table">
