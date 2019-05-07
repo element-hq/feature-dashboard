@@ -36,6 +36,24 @@ class Github {
         return connection;
     }
 
+    static async getTaskCount(octokit, issue) {
+        let options = octokit.issues.listComments.endpoint.merge({
+            owner: issue.owner,
+            repo: issue.repo,
+            number: issue.number
+        });
+        let comments = await octokit.paginate(options);
+        comments = comments.map(comment => comment.body);
+        comments.unshift(issue.body);
+        comments = comments.join("\n").split(/\r?\n/)
+        let completed = comments.filter(comment => comment.trim().toLowerCase().startsWith('- [x]')).length;
+        let outstanding = comments.filter(comment => comment.trim().startsWith('- [ ]')).length;
+        return {
+            completed: completed,
+            outstanding: outstanding
+        }
+    }
+
     static async getIssues(octokit, labels, searchRepos) {
         let searchString = searchRepos.map(repo => 'repo:' + repo)
             .join(' ') + ' ' + labels.map(label => `label:${label}`).join(' ') + ' is:issue';

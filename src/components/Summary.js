@@ -2,7 +2,76 @@ import React, { Component } from 'react';
 import dateFormat from 'dateformat';
 
 import TokenInput from './TokenInput';
-import DashboardUtils from '../DashboardUtils';
+
+function template(labels, repo) {
+    return {
+        labels: labels,
+        repo: repo,
+        deliveryDate: undefined,
+        todo: {
+            issues: [],
+            p1bugs: [],
+            p2bugs: [],
+            p3bugs: [],
+            others: []
+        },
+        wip: {
+            issues: [],
+            p1bugs: [],
+            p2bugs: [],
+            p3bugs: [],
+            others: []
+        },
+        done: {
+            issues: [],
+            p1bugs: [],
+            p2bugs: [],
+            p3bugs: [],
+            others: []
+        }
+    };
+}
+
+function establishDeliveryDate(issue, deliveryDate) {
+    if (deliveryDate === null) {
+        return null;
+    }
+    else if (issue.milestone && issue.milestone.due_on) {
+        if (deliveryDate === undefined) {
+            return new Date(issue.milestone.due_on);
+        }
+        else {
+            return Math.max(deliveryDate, new Date(issue.milestone.due_on));
+        }
+    }
+    else {
+        return null;
+    }
+}
+
+
+function generateSummary(issues, labels, searchRepos) { 
+    const repos = {};
+    for (const repo of searchRepos) {
+        repos[repo] = template(labels, repo);
+    }
+
+    for (const issue of issues) {
+        const repoName = `${issue.owner}/${issue.repo}`
+        const repo = repos[repoName];
+
+        repo[issue.state][issue.type].push(issue);
+        if (issue.state !== 'done' && ['issues', 'p1bugs'].includes(issue.type)) {
+            repo.deliveryDate = establishDeliveryDate(issue, repo.deliveryDate);
+        }
+
+    }
+    return {
+        labels: labels,
+        repos: Object.values(repos)
+    }
+}
+
 
 class SummaryRow extends Component {
     calculatePercentCompleted(repoFeature) {
@@ -218,11 +287,11 @@ class Summary extends Component {
     }
 
     render() {
-        let feature = DashboardUtils.generateSummary(
-                this.props.issues,
-                this.props.labels,
-                this.props.repos
-            );
+        let feature = generateSummary(
+            this.props.issues,
+            this.props.labels,
+            this.props.repos
+        );
 
         let rows = feature.repos.map(repo => <SummaryRow repoFeature={ repo }
             key={ repo.repo } />

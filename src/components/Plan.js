@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-// import DashboardUtils from '../DashboardUtils';
 
+// FIXME: This is all broken now.
 
 class Plan extends Component {
 
