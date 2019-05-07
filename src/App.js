@@ -3,7 +3,6 @@ import { HashRouter as Router, Route, Switch } from "react-router-dom";
 import queryString from 'query-string';
 import HashChange from 'react-hashchange';
 
-import DashboardUtils from './DashboardUtils';
 import Summary from './components/Summary';
 import Github from './Github';
 import Plan from './components/Plan';
@@ -15,10 +14,13 @@ class App extends Component {
     constructor(props) {
         super();
         this.state = {
-            feature: {
+            issues: [],
+            repos: [],
+            labels: [],
+            /* feature: {
                 labels: ['Loading...'],
                 repos: []
-            },
+            },*/
             connectionStatus: 'connecting'
         }
     }
@@ -46,11 +48,14 @@ class App extends Component {
 
             document.title = query.label.join(' ');
 
-            let feature = await DashboardUtils.generateSummary(
-                await Github.getIssues(connection.octokit, query.label, query.repo),
-                query.label, query.repo
-            );
-            this.setState({feature: feature})
+            let issues = await Github.getIssues(connection.octokit, query.label, query.repo);
+
+            this.setState({
+                labels: query.label,
+                repos: query.repo,
+                issues: issues
+            });
+
         }
     }
 
@@ -65,14 +70,18 @@ class App extends Component {
                         <Route path="/summary"
                             render={ props => <Summary 
                                 { ...props }
-                                feature={ this.state.feature }
+                                repos={ this.state.repos }
+                                labels={ this.state.labels }
+                                issues={ this.state.issues }
                                 connectionStatus={ this.state.connectionStatus }
                             /> }
                         />
                         <Route path="/plan" 
                             render={ props => <Plan 
                                 { ...props }
-                                feature={ this.state.feature }
+                                repos={ this.state.repos }
+                                labels={ this.state.labels }
+                                issues={ this.state.issues }
                                 connectionStatus={ this.state.connectionStatus }
                             /> }
                         />

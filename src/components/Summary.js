@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import dateFormat from 'dateformat';
 
 import TokenInput from './TokenInput';
+import DashboardUtils from '../DashboardUtils';
 
 class SummaryRow extends Component {
     calculatePercentCompleted(repoFeature) {
@@ -217,15 +218,21 @@ class Summary extends Component {
     }
 
     render() {
-        let rows = this.props.feature.repos.map(repo => <SummaryRow repoFeature={ repo }
+        let feature = DashboardUtils.generateSummary(
+                this.props.issues,
+                this.props.labels,
+                this.props.repos
+            );
+
+        let rows = feature.repos.map(repo => <SummaryRow repoFeature={ repo }
             key={ repo.repo } />
         );
 
         return (
             <div className="Summary">
                 <div className="Summary-Header">
-                    <div className="Label">{ this.props.feature.labels.join(' ') }</div>
-                    <div className="PercentComplete">{ this.calculatePercentCompleted(this.props.feature) }%</div>
+                    <div className="Label">{ feature.labels.join(' ') }</div>
+                    <div className="PercentComplete">{ this.calculatePercentCompleted(feature) }%</div>
                 </div>
                 <div className="Summary-Table">
                     <div className="Summary-Column"></div>

@@ -68,7 +68,7 @@ class DashboardUtils {
     }
 
 
-    static async generateSummary(issues, labels, searchRepos) { //octokit, label, searchRepos) {
+    static generateSummary(issues, labels, searchRepos) { 
         const repos = {};
         for (const repo of searchRepos) {
             repos[repo] = this.template(labels, repo);
