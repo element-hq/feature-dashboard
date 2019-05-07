@@ -64,7 +64,7 @@ class SummaryRow extends Component {
             searchUrl = `https://github.com/${repo}/issues?utf8=%E2%9C%93&q=${queryString}`;
         }
 
-        let issueNumbers = issues.map(x => `#${x.number}`).reduce((a, b) => a.concat(b), []);
+        let issueNumbers = issues.map(x => `#${x.number} ${x.title}`).reduce((a, b) => a.concat(b), []);
         return (
             <a href={ searchUrl } target="_blank" rel="noopener noreferrer" title={ issueNumbers.join("\n") }>
                 { issueNumbers.length }

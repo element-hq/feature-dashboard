@@ -4,6 +4,7 @@ import queryString from 'query-string';
 
 import DashboardUtils from './DashboardUtils';
 import Summary from './components/Summary';
+import Github from './Github';
 import Plan from './components/Plan';
 import Fail from './components/Fail';
 import './feature-dashboard.css';
@@ -36,13 +37,14 @@ class App extends Component {
                 query.repo = [query.repo];
             }
 
-            let connection = await DashboardUtils.getConnection();
+            let connection = await Github.getConnection();
             this.setState({connectionStatus: connection.status });
 
             document.title = query.label;
 
-            let feature = await DashboardUtils.getFeature(connection.octokit, query.label, query.repo);
-            this.setState({feature: feature}) 
+            let feature = await Github.getIssues(connection.octokit, query.label, query.repo);
+            feature = await DashboardUtils.generateSummary(feature, query.label, query.repo);
+            this.setState({feature: feature})
         }
     }
 
