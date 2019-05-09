@@ -3,19 +3,59 @@
 body {
     font-family: 'Roboto', sans-serif;
     font-variant-numeric: tabular-nums;
+    background: #f8f9fa;
 }
 
-.FeatureTag {
-    margin: 20px;
+.Plan {
+    font-family: Arial;
+    font-size: 15px;
+    margin: 12px;
+    display: inline-block;
+    box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2),
+                0px 2px 4px rgba(0, 0, 0, 0.3);
+    padding: 16px;
+    padding-right: 34px;
+    padding-bottom: 8px;
+    border-radius: 2px;
+    background: white;
+}
+
+.Plan .state {
+    opacity: 0.4;
+}
+
+.Plan .state.done {
+    color: green;
+}
+
+.Plan .label {
+    margin-bottom: 0px;
+}
+
+.Plan ul {
+    margin-top: 0px;
+}
+
+.Plan .phase {
+    padding-bottom: 4px;
+}
+
+.Plan li {
+    line-height: 25px;
+}
+
+.Summary {
+    margin: 12px;
     display: inline-block;
     box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2),
                 0px 2px 4px rgba(0, 0, 0, 0.3);
     padding: 16px;
     padding-bottom: 8px;
     border-radius: 2px;
+    background: white;
 }
 
-.FeatureTag-Header {
+.Summary-Header {
     margin-bottom: 22px;
     white-space: nowrap;
     margin-top: 4px;
@@ -23,13 +63,13 @@ body {
     padding-right: 4px;
 }
 
-.FeatureTag-Header .Label {
+.Summary-Header .Label {
     display: inline-block;
     margin-left: 0px;
     margin-right: auto;
 }
 
-.FeatureTag-Header .PercentComplete {
+.Summary-Header .PercentComplete {
     float: right;
     display: inline-block;
     opacity: 0.4;
@@ -38,20 +78,20 @@ body {
     margin-right: 0px;
 }
 
-.FeatureTag-Table {
+.Summary-Table {
     display: table;
 }
 
-.FeatureTag-Row {
+.Summary-Row {
     display: table-row;
 }
 
-.FeatureTag-Row div {
+.Summary-Row div {
     display: table-cell;
     padding: 3px;
 }
 
-.FeatureTag-TableHeader div {
+.Summary-TableHeader div {
     text-transform: uppercase;
     opacity: 0.6;
     font-size: 12px;
@@ -62,12 +102,12 @@ body {
     caption-side: top-outside;
 }
 
-.FeatureTag .RepoCol {
+.Summary .RepoCol {
     display: table-column;
     background-color: green;
 }
 
-.FeatureTag-Column {
+.Summary-Column {
     display: table-column;
 }
 
@@ -75,31 +115,31 @@ body {
     padding-left: 6px;
 }
 
-.FeatureTag-Row div:nth-child(1) {
+.Summary-Row div:nth-child(1) {
     padding-right: 30px;
 }
 
-.FeatureTag-Row div:nth-child(4) {
+.Summary-Row div:nth-child(4) {
     padding-right: 30px;
 }
 
-.FeatureTag-Row div:nth-child(6) {
+.Summary-Row div:nth-child(6) {
     opacity: 0.4;
 }
 
-.FeatureTag-Row div:nth-child(7) {
+.Summary-Row div:nth-child(7) {
     opacity: 0.4;
 }
 
-.FeatureTag-Row div:nth-child(9) {
+.Summary-Row div:nth-child(9) {
     padding-right: 30px;
 }
 
-.FeatureTag-Row div:nth-child(10) {
+.Summary-Row div:nth-child(10) {
     padding-right: 20px;
 }
 
-.FeatureTag-Row div:nth-child(11) {
+.Summary-Row div:nth-child(11) {
     padding-right: 20px;
 }
 
