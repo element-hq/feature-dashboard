@@ -17,10 +17,6 @@ class App extends Component {
             issues: [],
             repos: [],
             labels: [],
-            /* feature: {
-                labels: ['Loading...'],
-                repos: []
-            },*/
             connectionStatus: 'connecting'
         }
     }
@@ -43,7 +39,8 @@ class App extends Component {
                 query.label = [query.label];
             }
 
-            let connection = await Github.getConnection();
+            let token = localStorage.getItem('github_token');
+            let connection = await Github.getConnection(token);
             this.setState({connectionStatus: connection.status });
 
             document.title = query.label.join(' ');

@@ -3,8 +3,6 @@ import Octokit from '@octokit/rest';
 class Github {
 
     static async getConnection(token) {
-        /* let token = localStorage.getItem('github_token'); */
-
         if (!token) {
             return {
                 octokit: new Octokit(),
