@@ -22,7 +22,13 @@ class Plan extends Component {
                     .includes(phase);
             })
                 .sort((a, b) => {
-                    return a.number - b.number;
+                    let states = ['done', 'wip', 'todo'];
+                    if (a.state === b.state) {
+                        return a.number - b.number;
+                    }
+                    else {
+                        return states.indexOf(a.state) - states.indexOf(b.state);
+                    }
                 });
         });
         console.log(phasedIssues);
@@ -39,7 +45,7 @@ class Plan extends Component {
                                             phasedIssues[phase].map(issue =>
                                                 <li class="task" key={ issue.number }>
                                                     <a href={ issue.url }>{ `${issue.number} ${issue.title}` }</a>
-                                                    <span class='state'>
+                                                    <span class={ 'state ' + issue.state }>
                                                     {
                                                         issue.state === 'done' ? ' (done)' : issue.state === 'wip' ? ' (in progress)' : ''
                                                     }

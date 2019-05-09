@@ -24,6 +24,10 @@ body {
     opacity: 0.4;
 }
 
+.Plan .state.done {
+    color: green;
+}
+
 .Plan .label {
     margin-bottom: 0px;
 }
