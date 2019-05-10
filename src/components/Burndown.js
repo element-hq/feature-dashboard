@@ -25,7 +25,8 @@ class Burndown extends Component {
             )
         );
         let today = new Date();
-        while (date < today) {
+        let tomorrow = new Date().setDate(today.getDate() + 1);
+        while (date < tomorrow) {
             let day = dateFormat(date, 'yyyy-mm-dd');
             dates.push(day);
             issueCounts[day] = 0;
