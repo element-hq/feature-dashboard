@@ -34,9 +34,9 @@ class Burndown extends Component {
         }
 
         this.props.issues.forEach(issue => {
-            let start = dateFormat(issue.githubIssue.created_at, 'yyyy-mm-dd');
-            let end = issue.githubIssue.closed_at ? dateFormat(issue.githubIssue.closed_at, 'yyyy-mm-dd') : dates[dates.length - 1];
-            for (let n = dates.indexOf(start); n <= dates.indexOf(end); n++) {
+            let start = dates.indexOf(dateFormat(issue.githubIssue.created_at, 'yyyy-mm-dd'));
+            let end = issue.githubIssue.closed_at ? dates.indexOf(dateFormat(issue.githubIssue.closed_at, 'yyyy-mm-dd')) : dates.length;
+            for (let n = start; n < end; n++) {
                 issueCounts[dates[n]] += 1;
             }
         });
