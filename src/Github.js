@@ -1,4 +1,5 @@
 import Octokit from '@octokit/rest';
+import graphql from '@octokit/graphql';
 
 class Github {
 
@@ -49,6 +50,43 @@ class Github {
         return {
             completed: completed,
             outstanding: outstanding
+        }
+    }
+
+    static async getFullIssues(labels, searchRepos) {
+        const query = `
+            query issueBodiesOverTime($owner: String!, $project: String!, $labels: [String!]!) {
+                repository(owner: $owner, name: $project) {
+                    issues(first: 100, labels: $labels) {
+                        edges {
+                            cursor
+                            node {
+                                number
+                                body
+                                userContentEdits(first: 100) {
+                                    edges {
+                                        node {
+                                            editedAt
+                                            diff
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }`
+        for (const repo of searchRepos) {
+            let [owner, project] = repo.split('/');
+            let issues = await graphql(query, {
+                headers: {
+                    authorization: "token f3b7ff551d31170bef759d1a6889ee62ce5b3a83"
+                },
+                owner: owner,
+                project: project,
+                labels: labels
+            });
+            console.log(issues);
         }
     }
 

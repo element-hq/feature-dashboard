@@ -47,6 +47,7 @@ class App extends Component {
 
             document.title = query.label.join(' ');
 
+            await Github.getFullIssues(query.label, query.repo);
             let issues = await Github.getIssues(connection.octokit, query.label, query.repo);
 
             this.setState({
