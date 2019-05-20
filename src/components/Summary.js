@@ -251,7 +251,7 @@ class SummaryRow extends Component {
                 <div>{
                     this.makeLink(
                         repoFeature.repo,
-                        repoFeature.label,
+                        repoFeature.labels,
                         ['is:open'].concat(repoFeature.todo.others.concat(repoFeature.wip.others).map(issue => issue.number)),
                         repoFeature.todo.others.concat(repoFeature.wip.others)
                     )
