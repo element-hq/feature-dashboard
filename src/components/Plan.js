@@ -31,21 +31,20 @@ class Plan extends Component {
                     }
                 });
         });
-        console.log(phasedIssues);
         return (
-            <div class="Plan">
-                <p class="label">{ this.props.labels.join(' ') }</p>
+            <div className="Plan">
+                <p className="label">{ this.props.labels.join(' ') }</p>
                 <ul>
                     {
                         phases.map(phase => {
                             return (
-                                <li class="phase" key={ phase }>{ phase }
+                                <li className="phase" key={ phase }>{ phase }
                                     <ul>
                                         {
                                             phasedIssues[phase].map(issue =>
-                                                <li class="task" key={ issue.number }>
+                                                <li className="task" key={ issue.number }>
                                                     <a href={ issue.url }>{ `${issue.number} ${issue.title}` }</a>
-                                                    <span class={ 'state ' + issue.state }>
+                                                    <span className={ 'state ' + issue.state }>
                                                     {
                                                         issue.state === 'done' ? ' (done)' : issue.state === 'wip' ? ' (in progress)' : ''
                                                     }

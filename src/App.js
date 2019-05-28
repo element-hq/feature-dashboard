@@ -3,10 +3,12 @@ import { HashRouter as Router, Route, Switch } from "react-router-dom";
 import queryString from 'query-string';
 import HashChange from 'react-hashchange';
 
-import Summary from './components/Summary';
 import Github from './Github';
-import Plan from './components/Plan';
 import Fail from './components/Fail';
+import Plan from './components/Plan';
+import Summary from './components/Summary';
+import Burndown from './components/Burndown';
+
 import './feature-dashboard.css';
 
 class App extends Component {
@@ -45,6 +47,7 @@ class App extends Component {
 
             document.title = query.label.join(' ');
 
+            await Github.getFullIssues(query.label, query.repo);
             let issues = await Github.getIssues(connection.octokit, query.label, query.repo);
 
             this.setState({
@@ -65,7 +68,7 @@ class App extends Component {
                 <Router>
                     <Switch>
                         <Route path="/summary"
-                            render={ props => <Summary 
+                            render={ props => <Summary
                                 { ...props }
                                 repos={ this.state.repos }
                                 labels={ this.state.labels }
@@ -74,7 +77,16 @@ class App extends Component {
                             /> }
                         />
                         <Route path="/plan" 
-                            render={ props => <Plan 
+                            render={ props => <Plan
+                                { ...props }
+                                repos={ this.state.repos }
+                                labels={ this.state.labels }
+                                issues={ this.state.issues }
+                                connectionStatus={ this.state.connectionStatus }
+                            /> }
+                        />
+                        <Route path="/burndown" 
+                            render={ props => <Burndown
                                 { ...props }
                                 repos={ this.state.repos }
                                 labels={ this.state.labels }

@@ -11,7 +11,7 @@ class Fail extends Component {
     ████▄█▌▄▌▄▐▐▌▀███▄▄█▌
     ▄▄▄▄▄██████████████
 
-    Please what means "`}
+    What is a "`}
             { Array.join(
                 this.props.location.pathname.match(/.{1,36}/g),
                 '\n                       ')
