@@ -1,9 +1,6 @@
-# feature-dashboard
-![](https://travis-ci.com/lampholder/feature-dashboard.svg?branch=master)
-
 Summarise the status of a feature that is in development across multiple github projects:
 ![image](https://user-images.githubusercontent.com/1922197/54301147-4bd31580-45b6-11e9-8c93-558ba4c072c4.png)
-https://lampholder.github.io/feature-dashboard/?repo=vector-im/riot-web&repo=vector-im/riot-ios&repo=vector-im/riot-android&label=feature:e2e-sas-verification
+https://vector-im.github.io/feature-dashboard/?repo=vector-im/riot-web&repo=vector-im/riot-ios&repo=vector-im/riot-android&label=feature:e2e-sas-verification
 
 ## How it works
 
