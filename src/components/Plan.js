@@ -18,19 +18,30 @@ class Plan extends Component {
         let phasedIssues = {};
         phases.forEach(phase => {
             phasedIssues[phase] = this.props.issues.filter(issue => {
-                return issue.labels.map(label => label.name)
-                    .includes(phase);
-            })
-                .sort((a, b) => {
-                    let states = ['done', 'wip', 'todo'];
-                    if (a.state === b.state) {
-                        return a.number - b.number;
-                    }
-                    else {
-                        return states.indexOf(a.state) - states.indexOf(b.state);
-                    }
-                });
+                return issue.labels.map(label => label.name).includes(phase);
+            });
         });
+
+        // Add unphased issues as an extra section
+        phases.push("unphased");
+        phasedIssues["unphased"] = this.props.issues.filter(issue => {
+            const labels = issue.labels.map(label => label.name);
+            return !labels.some(label => label.startsWith("phase:"));
+        });
+
+        // Sort issues in all phases (including unphased) by state
+        phases.forEach(phase => {
+            phasedIssues[phase].sort((a, b) => {
+                let states = ['done', 'wip', 'todo'];
+                if (a.state === b.state) {
+                    return a.number - b.number;
+                }
+                else {
+                    return states.indexOf(a.state) - states.indexOf(b.state);
+                }
+            });
+        });
+
         return (
             <div className="Plan">
                 <p className="label">{ this.props.labels.join(' ') }</p>
