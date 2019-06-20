@@ -106,20 +106,20 @@ class App extends Component {
 /* 
  * Legacy links to this tool just passed query params to the root:
  *
- * http://host/?repo=example-org/example-repo&...
+ * https://host/?repo=example-org/example-repo&...
  *
  * I want to redirect those links to the summary view, but I wasn't able to
  * make ReactRouter execute the redirect without making a mess of the query 
  * params:
  *
- * http://host/?repo=... -> http://host/?repo=...#/summary
+ * https://host/?repo=... -> https://host/?repo=...#/summary
  *
  * Crucially, after the ReactRouter redirect, the query params were no longer
  * accessible to `this.props.location.search`. So instead we're taking matters
  * into our own hands and wrestling `window.location.replace` directly,
  * preserving the query params in the destination:
  *
- * http://host/?repo=... -> https://host/#/summary?repo=...
+ * https://host/?repo=... -> https://host/#/summary?repo=...
  */
 class RedirectLegacy extends Component {
 

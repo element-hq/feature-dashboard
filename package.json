@@ -2,7 +2,7 @@
   "name": "feature-dashboard",
   "version": "0.1.0",
   "private": true,
-  "homepage": "http://vector-im.github.io/feature-dashboard",
+  "homepage": "https://vector-im.github.io/feature-dashboard",
   "dependencies": {
     "@octokit/graphql": "^2.1.1",
     "@octokit/rest": "^16.16.3",
