@@ -39,11 +39,13 @@ class Plan extends Component {
         });
 
         // Add unphased issues as an extra section
-        phases.push("unphased");
         phasedIssues["unphased"] = this.props.issues.filter(issue => {
             const labels = issue.labels.map(label => label.name);
             return !labels.some(label => label.startsWith("phase:"));
         });
+        if (phasedIssues["unphased"].length > 0) {
+            phases.push("unphased");
+        }
 
         // Sort issues in all phases (including unphased) by state
         phases.forEach(phase => {
