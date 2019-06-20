@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { HashRouter as Router, Route, Switch } from "react-router-dom";
+import { HashRouter as Router, Route, Switch, Link } from "react-router-dom";
 import queryString from 'query-string';
 import HashChange from 'react-hashchange';
 
@@ -16,6 +16,7 @@ class App extends Component {
     constructor(props) {
         super();
         this.state = {
+            query: null,
             issues: [],
             repos: [],
             labels: [],
@@ -50,12 +51,40 @@ class App extends Component {
             let issues = await Github.getIssues(connection.octokit, query.label, query.repo);
 
             this.setState({
+                query,
                 labels: query.label,
                 repos: query.repo,
                 issues: issues
             });
 
         }
+    }
+
+    get routes() {
+        return [
+            {
+                path: "/summary",
+                label: "Summary",
+                component: Summary,
+            },
+            {
+                path: "/plan",
+                label: "Plan",
+                component: Plan,
+            },
+            {
+                path: "/burndown",
+                label: "Burndown",
+                component: Burndown,
+            },
+        ];
+    }
+
+    pathWithQuery(path) {
+        if (!this.state.query) {
+            return path;
+        }
+        return path + "?" + queryString.stringify(this.state.query);
     }
 
     render() {
@@ -66,36 +95,27 @@ class App extends Component {
                 }} />
                 <Router>
                     <Switch>
-                        <Route path="/summary"
-                            render={ props => <Summary
-                                { ...props }
-                                repos={ this.state.repos }
-                                labels={ this.state.labels }
-                                issues={ this.state.issues }
-                                connectionStatus={ this.state.connectionStatus }
-                            /> }
-                        />
-                        <Route path="/plan" 
-                            render={ props => <Plan
-                                { ...props }
-                                repos={ this.state.repos }
-                                labels={ this.state.labels }
-                                issues={ this.state.issues }
-                                connectionStatus={ this.state.connectionStatus }
-                            /> }
-                        />
-                        <Route path="/burndown" 
-                            render={ props => <Burndown
-                                { ...props }
-                                repos={ this.state.repos }
-                                labels={ this.state.labels }
-                                issues={ this.state.issues }
-                                connectionStatus={ this.state.connectionStatus }
-                            /> }
-                        />
+                        {this.routes.map(({ path, component: Component }) => (
+                            <Route path={path} key={path}
+                                render={props => <Component
+                                    {...props}
+                                    repos={this.state.repos}
+                                    labels={this.state.labels}
+                                    issues={this.state.issues}
+                                    connectionStatus={this.state.connectionStatus}
+                                />}
+                            />
+                        ))}
                         <Route exact path="/" component= { RedirectLegacy } />
                         <Route component={ Fail } />
                     </Switch>
+                    <nav>
+                        {this.routes.map(({ path, label }) => (
+                            <Link key={path} to={this.pathWithQuery(path)}>
+                                {label}
+                            </Link>
+                        ))}
+                    </nav>
                 </Router>
             </div>
         );
