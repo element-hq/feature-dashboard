@@ -72,7 +72,7 @@ class Plan extends Component {
                                         {
                                             phasedIssues[phase].map(issue =>
                                                 <li className="task" key={ issue.number }>
-                                                    <a href={ issue.url }>{ `${issue.number} ${issue.title}` }</a>
+                                                    <a href={ issue.url } target="_blank" rel="noopener noreferrer" >{ `${issue.number} ${issue.title}` }</a>
                                                     <span className={ 'state ' + issue.state }>
                                                     {
                                                         issue.state === 'done' ? ' (done)' : issue.state === 'wip' ? ' (in progress)' : ''
