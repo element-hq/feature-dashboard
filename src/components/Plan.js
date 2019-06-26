@@ -21,6 +21,7 @@ import TokenInput from './TokenInput';
 class Plan extends Component {
 
     render() {
+        let repos = this.props.repos;
         let phases = [...new Set(
             [].concat(...this.props.issues.map(issue =>
                 issue.labels.map(label => label.name)
@@ -33,30 +34,44 @@ class Plan extends Component {
 
         let phasedIssues = {};
         phases.forEach(phase => {
-            phasedIssues[phase] = this.props.issues.filter(issue => {
-                return issue.labels.map(label => label.name).includes(phase);
+            phasedIssues[phase] = {};
+            repos.forEach(repo => {
+                phasedIssues[phase][repo] = this.props.issues.filter(issue => {
+                    // FIXME: repo should either mean "vector-im/riot-web" or "riot-web"
+                    // consistently
+                    return (issue.labels.map(label => label.name).includes(phase)
+                        && (issue.owner + '/' + issue.repo) === repo );
+                });
             });
         });
 
         // Add unphased issues as an extra section
-        phasedIssues["unphased"] = this.props.issues.filter(issue => {
-            const labels = issue.labels.map(label => label.name);
-            return !labels.some(label => label.startsWith("phase:"));
+        phasedIssues["unphased"] = {};
+        repos.forEach(repo => {
+            phasedIssues["unphased"][repo] = this.props.issues.filter(issue => {
+                const labels = issue.labels.map(label => label.name);
+                // FIXME: repo should either mean "vector-im/riot-web" or "riot-web"
+                // consistently
+                return (!labels.some(label => label.startsWith("phase:"))
+                    && (issue.owner + '/' + issue.repo) === repo);
+            });
+            if (phasedIssues["unphased"][repo].length > 0) {
+                phases.push("unphased");
+            }
         });
-        if (phasedIssues["unphased"].length > 0) {
-            phases.push("unphased");
-        }
 
         // Sort issues in all phases (including unphased) by state
         phases.forEach(phase => {
-            phasedIssues[phase].sort((a, b) => {
-                let states = ['done', 'wip', 'todo'];
-                if (a.state === b.state) {
-                    return a.number - b.number;
-                }
-                else {
-                    return states.indexOf(a.state) - states.indexOf(b.state);
-                }
+            repos.forEach(repo => {
+                phasedIssues[phase][repo].sort((a, b) => {
+                    let states = ['done', 'wip', 'todo'];
+                    if (a.state === b.state) {
+                        return a.number - b.number;
+                    }
+                    else {
+                        return states.indexOf(a.state) - states.indexOf(b.state);
+                    }
+                });
             });
         });
 
@@ -68,20 +83,31 @@ class Plan extends Component {
                         phases.map(phase => {
                             return (
                                 <li className="phase" key={ phase }>{ phase }
-                                    <ul>
-                                        {
-                                            phasedIssues[phase].map(issue =>
-                                                <li className="task" key={ issue.number }>
-                                                    <a href={ issue.url } target="_blank" rel="noopener noreferrer" >{ `${issue.number} ${issue.title}` }</a>
-                                                    <span className={ 'state ' + issue.state }>
-                                                    {
-                                                        issue.state === 'done' ? ' (done)' : issue.state === 'wip' ? ' (in progress)' : ''
-                                                    }
-                                                    </span>
+                                <ul>
+                                    {
+                                        repos.map(repo => {
+                                            if (phasedIssues[phase][repo].length === 0) return null;
+                                            return (
+                                                <li className="repo" key={ repo }>{ repo }
+                                                    <ul>
+                                                        {
+                                                            phasedIssues[phase][repo].map(issue =>
+                                                                <li className="task" key={ issue.number }>
+                                                                    <a href={ issue.url } target="_blank" rel="noopener noreferrer" >{ `${issue.number} ${issue.title}` }</a>
+                                                                    <span className={ 'state ' + issue.state }>
+                                                                    {
+                                                                        issue.state === 'done' ? ' (done)' : issue.state === 'wip' ? ' (in progress)' : ''
+                                                                    }
+                                                                    </span>
+                                                                </li>
+                                                            )
+                                                        }
+                                                    </ul>
                                                 </li>
                                             )
-                                        }
-                                    </ul>
+                                        })
+                                    }
+                                </ul>
                                 </li>
                             )
                         })
