@@ -18,9 +18,112 @@ import React, { Component } from 'react';
 
 import TokenInput from './TokenInput';
 
+class IssueTree extends Component {
+
+    render() {
+        let fields = this.props.fields;
+        let items = this.props.items;
+        let renderItem = this.props.renderItem;
+
+        let thisLevel = fields[0];
+
+        let thisField = thisLevel.field;
+        let unbucketedName = thisLevel.unbucketed || 'noname';
+        let sort = thisLevel.sort || Array.sort;
+
+        let headings = sort([...new Set(items.filter(thisField).map(thisField))]);
+        let buckets = {};
+        let bucketed = [];
+        headings.forEach(heading => {
+            buckets[heading] = items.filter(item => thisField(item) === heading);
+            bucketed = bucketed.concat(buckets[heading]);
+        });
+        let unbucketed = items.filter(item => !bucketed.includes(item));
+        if (unbucketed.length > 0) {
+            buckets[unbucketedName] = unbucketed;
+        }
+
+        if (fields.length === 1) {
+            return (
+                Object.keys(buckets).map(bucket => {
+                    if (buckets[bucket].length === 0) {
+                        return null;
+                    }
+                    else {
+                        return (
+                            <li className="heading" key={bucket}>{ bucket }
+                                <ul>
+                                {
+                                    buckets[bucket].map(item => renderItem(item))
+                                }
+                                </ul>
+                            </li>
+                        )
+                    }
+                })
+            );
+        }
+        else {
+            let body = fields.slice(1);
+            return (
+                Object.keys(buckets).map(bucket => {
+                    return (
+                        <li className="heading" key={ bucket }>{ bucket }
+                            <ul>
+                                <IssueTree fields={ body } items={ buckets[bucket] } renderItem={ renderItem } />
+                            </ul>
+                        </li>
+                    )
+                })
+            );
+        }
+    }
+}
+
+
 class Plan extends Component {
 
     render() {
+        let fields = [
+            {
+                field: issue => {
+                    let phases = issue.labels.filter(label => label.name.startsWith('phase:'));
+                    if (phases.length > 0) {
+                        return phases[0].name;
+                    }
+                    else return null;
+                },
+                unbucketed: 'unphased'
+            },
+            {
+                field: issue => issue.owner + '/' + issue.repo,
+            }
+        ];
+        let renderItem = issue => {
+            return (
+                <li className="task" key={ issue.number }>
+                    <a href={ issue.url } target="_blank" rel="noopener noreferrer" >{ `${issue.number} ${issue.title}` }</a>
+                    <span className={ 'state ' + issue.state }>
+                    {
+                        issue.state === 'done' ? ' (done)' : issue.state === 'wip' ? ' (in progress)' : ''
+                    }
+                    </span>
+                </li>
+            );
+        }
+        return (
+            <div className="Plan">
+                <p className="label">{ this.props.labels.join(' ') }</p>
+                <ul>
+                    <IssueTree fields={ fields } items={ this.props.issues } renderItem={ renderItem } />
+                </ul>
+                <TokenInput status={ this.props.connectionStatus }/>
+            </div>
+        )
+
+    }
+}
+    /*
         let repos = this.props.repos;
         let phases = [...new Set(
             [].concat(...this.props.issues.map(issue =>
@@ -119,5 +222,5 @@ class Plan extends Component {
     }
 
 }
-
+*/
 export default Plan;
