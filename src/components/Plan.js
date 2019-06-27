@@ -25,58 +25,50 @@ class IssueTree extends Component {
         let items = this.props.items;
         let renderItem = this.props.renderItem;
 
+        if (fields.length === 0) {
+            return items.sort(this.props.sortItems).map(item => renderItem(item));
+        }
+
         let thisLevel = fields[0];
 
         let thisField = thisLevel.field;
-        let unbucketedName = thisLevel.unbucketed || 'noname';
-        let sort = thisLevel.sort || Array.sort;
+        let unbucketedName = thisLevel.unbucketedName || 'noname';
 
-        let headings = sort([...new Set(items.filter(thisField).map(thisField))]);
+        let headings = [...new Set(items.filter(thisField).map(thisField))].sort(thisLevel.sort);
+
         let buckets = {};
-        let bucketed = [];
         headings.forEach(heading => {
             buckets[heading] = items.filter(item => thisField(item) === heading);
-            bucketed = bucketed.concat(buckets[heading]);
         });
-        let unbucketed = items.filter(item => !bucketed.includes(item));
+
+        // Put any of the items that didn't land in a headered bucket into the
+        // 'unbucketed' category.
+        let unbucketed = items.filter(item =>
+            !Object.values(buckets).reduce(Array.concat, []).includes(item));
+
         if (unbucketed.length > 0) {
             buckets[unbucketedName] = unbucketed;
         }
 
-        if (fields.length === 1) {
-            return (
-                Object.keys(buckets).map(bucket => {
-                    if (buckets[bucket].length === 0) {
-                        return null;
-                    }
-                    else {
-                        return (
-                            <li className="heading" key={bucket}>{ bucket }
-                                <ul>
-                                {
-                                    buckets[bucket].map(item => renderItem(item))
-                                }
-                                </ul>
-                            </li>
-                        )
-                    }
-                })
-            );
-        }
-        else {
-            let body = fields.slice(1);
-            return (
-                Object.keys(buckets).map(bucket => {
+        return (
+            Object.keys(buckets).map(bucket => {
+                if (buckets[bucket].length > 0) {
                     return (
                         <li className="heading" key={ bucket }>{ bucket }
                             <ul>
-                                <IssueTree fields={ body } items={ buckets[bucket] } renderItem={ renderItem } />
+                                <IssueTree
+                                    fields={ fields.slice(1) }
+                                    items={ buckets[bucket] }
+                                    renderItem={ renderItem }
+                                    sortItems={ this.props.sortItems }
+                                />
                             </ul>
                         </li>
                     )
-                })
-            );
-        }
+                }
+                else return null;
+            })
+        );
     }
 }
 
@@ -93,12 +85,18 @@ class Plan extends Component {
                     }
                     else return null;
                 },
-                unbucketed: 'unphased'
-            },
-            {
-                field: issue => issue.owner + '/' + issue.repo,
+                sort: (a, b) => {
+                    return Number(a.split(":")[1]) -
+                        Number(b.split(":")[1]);
+                },
+                unbucketedName: 'unphased'
             }
         ];
+        if (this.props.repos.length > 1) {
+            fields.push({
+                field: issue => issue.owner + '/' + issue.repo,
+            });
+        }
         let renderItem = issue => {
             return (
                 <li className="task" key={ issue.number }>
@@ -110,12 +108,18 @@ class Plan extends Component {
                     </span>
                 </li>
             );
-        }
+        };
+
         return (
             <div className="Plan">
                 <p className="label">{ this.props.labels.join(' ') }</p>
                 <ul>
-                    <IssueTree fields={ fields } items={ this.props.issues } renderItem={ renderItem } />
+                    <IssueTree
+                        fields={ fields }
+                        items={ this.props.issues }
+                        renderItem={ renderItem }
+                        sortItems={ (a, b) => a.number - b.number }
+                    />
                 </ul>
                 <TokenInput status={ this.props.connectionStatus }/>
             </div>
@@ -123,104 +127,5 @@ class Plan extends Component {
 
     }
 }
-    /*
-        let repos = this.props.repos;
-        let phases = [...new Set(
-            [].concat(...this.props.issues.map(issue =>
-                issue.labels.map(label => label.name)
-            )))]
-            .filter(label => label.startsWith("phase:"))
-            .sort((a, b) => {
-                return Number(a.split(":")[1]) -
-                    Number(b.split(":")[1]);
-            });
 
-        let phasedIssues = {};
-        phases.forEach(phase => {
-            phasedIssues[phase] = {};
-            repos.forEach(repo => {
-                phasedIssues[phase][repo] = this.props.issues.filter(issue => {
-                    // FIXME: repo should either mean "vector-im/riot-web" or "riot-web"
-                    // consistently
-                    return (issue.labels.map(label => label.name).includes(phase)
-                        && (issue.owner + '/' + issue.repo) === repo );
-                });
-            });
-        });
-
-        // Add unphased issues as an extra section
-        phasedIssues["unphased"] = {};
-        repos.forEach(repo => {
-            phasedIssues["unphased"][repo] = this.props.issues.filter(issue => {
-                const labels = issue.labels.map(label => label.name);
-                // FIXME: repo should either mean "vector-im/riot-web" or "riot-web"
-                // consistently
-                return (!labels.some(label => label.startsWith("phase:"))
-                    && (issue.owner + '/' + issue.repo) === repo);
-            });
-            if (phasedIssues["unphased"][repo].length > 0) {
-                phases.push("unphased");
-            }
-        });
-
-        // Sort issues in all phases (including unphased) by state
-        phases.forEach(phase => {
-            repos.forEach(repo => {
-                phasedIssues[phase][repo].sort((a, b) => {
-                    let states = ['done', 'wip', 'todo'];
-                    if (a.state === b.state) {
-                        return a.number - b.number;
-                    }
-                    else {
-                        return states.indexOf(a.state) - states.indexOf(b.state);
-                    }
-                });
-            });
-        });
-
-        return (
-            <div className="Plan">
-                <p className="label">{ this.props.labels.join(' ') }</p>
-                <ul>
-                    {
-                        phases.map(phase => {
-                            return (
-                                <li className="phase" key={ phase }>{ phase }
-                                <ul>
-                                    {
-                                        repos.map(repo => {
-                                            if (phasedIssues[phase][repo].length === 0) return null;
-                                            return (
-                                                <li className="repo" key={ repo }>{ repo }
-                                                    <ul>
-                                                        {
-                                                            phasedIssues[phase][repo].map(issue =>
-                                                                <li className="task" key={ issue.number }>
-                                                                    <a href={ issue.url } target="_blank" rel="noopener noreferrer" >{ `${issue.number} ${issue.title}` }</a>
-                                                                    <span className={ 'state ' + issue.state }>
-                                                                    {
-                                                                        issue.state === 'done' ? ' (done)' : issue.state === 'wip' ? ' (in progress)' : ''
-                                                                    }
-                                                                    </span>
-                                                                </li>
-                                                            )
-                                                        }
-                                                    </ul>
-                                                </li>
-                                            )
-                                        })
-                                    }
-                                </ul>
-                                </li>
-                            )
-                        })
-                    }
-                </ul>
-                <TokenInput status={ this.props.connectionStatus }/>
-            </div>
-        );
-    }
-
-}
-*/
 export default Plan;
