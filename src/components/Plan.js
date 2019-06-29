@@ -21,49 +21,52 @@ import TokenInput from './TokenInput';
 class IssueTree extends Component {
 
     render() {
-        let fields = this.props.fields;
+        let categories = this.props.categories;
         let items = this.props.items;
         let renderItem = this.props.renderItem;
 
-        if (fields.length === 0) {
-            return items.sort(this.props.sortItems).map(item => renderItem(item));
+        if (categories.length === 0) {
+            return (
+                <ul>
+                    { items.sort(this.props.sortItems).map(item => renderItem(item)) }
+                </ul>
+            );
         }
 
-        let thisLevel = fields[0];
+        let { label, sort, unbucketed } = categories[0];
 
-        let thisField = thisLevel.field;
-        let unbucketedName = thisLevel.unbucketedName || 'noname';
-
-        let headings = [...new Set(items.filter(thisField).map(thisField))].sort(thisLevel.sort);
+        let headings = [...new Set(items.filter(label).map(label))].sort(sort);
 
         let buckets = {};
         headings.forEach(heading => {
-            buckets[heading] = items.filter(item => thisField(item) === heading);
+            buckets[heading] = items.filter(item => label(item) === heading);
         });
 
-        // Put any of the items that didn't land in a headered bucket into the
-        // 'unbucketed' category.
-        let unbucketed = items.filter(item =>
-            !Object.values(buckets).reduce(Array.concat, []).includes(item));
+        // If we're interested in issues that weren't matched by the filter,
+        // thorw them into an 'unbucketed' category.
+        if (unbucketed) {
+            let unbucketedItems = items.filter(item =>
+                !Object.values(buckets).reduce(Array.concat, []).includes(item));
 
-        if (unbucketed.length > 0) {
-            buckets[unbucketedName] = unbucketed;
+            if (unbucketedItems.length > 0) {
+                buckets[unbucketed] = unbucketedItems;
+            }
         }
 
         return (
             Object.keys(buckets).map(bucket => {
                 if (buckets[bucket].length > 0) {
                     return (
-                        <li className="heading" key={ bucket }>{ bucket }
-                            <ul>
+                        <ul>
+                            <li className="heading" key={ bucket }>{ bucket }
                                 <IssueTree
-                                    fields={ fields.slice(1) }
+                                    categories={ categories.slice(1) }
                                     items={ buckets[bucket] }
                                     renderItem={ renderItem }
                                     sortItems={ this.props.sortItems }
                                 />
-                            </ul>
-                        </li>
+                            </li>
+                        </ul>
                     )
                 }
                 else return null;
@@ -76,9 +79,9 @@ class IssueTree extends Component {
 class Plan extends Component {
 
     render() {
-        let fields = [
+        let categories = [
             {
-                field: issue => {
+                label: issue => {
                     let phases = issue.labels.filter(label => label.name.startsWith('phase:'));
                     if (phases.length > 0) {
                         return phases[0].name;
@@ -86,15 +89,14 @@ class Plan extends Component {
                     else return null;
                 },
                 sort: (a, b) => {
-                    return Number(a.split(":")[1]) -
-                        Number(b.split(":")[1]);
+                    return Number(a.split(":")[1]) - Number(b.split(":")[1]);
                 },
-                unbucketedName: 'unphased'
+                unbucketed: 'unphased'
             }
         ];
         if (this.props.repos.length > 1) {
-            fields.push({
-                field: issue => issue.owner + '/' + issue.repo,
+            categories.push({
+                label: issue => issue.owner + '/' + issue.repo,
             });
         }
         let renderItem = issue => {
@@ -113,14 +115,12 @@ class Plan extends Component {
         return (
             <div className="Plan">
                 <p className="label">{ this.props.labels.join(' ') }</p>
-                <ul>
-                    <IssueTree
-                        fields={ fields }
-                        items={ this.props.issues }
-                        renderItem={ renderItem }
-                        sortItems={ (a, b) => a.number - b.number }
-                    />
-                </ul>
+                <IssueTree
+                    categories={ categories }
+                    items={ this.props.issues }
+                    renderItem={ renderItem }
+                    sortItems={ (a, b) => a.number - b.number }
+                />
                 <TokenInput status={ this.props.connectionStatus }/>
             </div>
         )
