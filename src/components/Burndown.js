@@ -34,6 +34,7 @@ class Burndown extends Component {
 
         let dates = [];
         let openIssueCounts = {};
+        let closedIssueDeltas = {};
 
         // Initialise dates array and issue count per day for all relevant dates
         let date = new Date(
@@ -47,6 +48,7 @@ class Burndown extends Component {
             let day = dateFormat(date, 'yyyy-mm-dd');
             dates.push(day);
             openIssueCounts[day] = {};
+            closedIssueDeltas[day] = 0;
             date.setDate(date.getDate() + 1);
         }
 
@@ -106,24 +108,30 @@ class Burndown extends Component {
             });
         });
 
-        let todaysDate = dates[dates.length - 1];
+        // Count closed issue deltas for entire project
+        issues.forEach(issue => {
+            let { closed_at } = issue.githubIssue;
+            if (!closed_at) {
+                return;
+            }
+            let closedDate = dateFormat(closed_at, 'yyyy-mm-dd');
+            closedIssueDeltas[closedDate] += 1;
+        });
+
+        // Look back up to 2 weeks to compute average rate per day
+        let rateSamplingDays = Math.min(dates.length, 14);
+        let closedIssuesOverSamplingDays = 0;
+        for (let i = dates.length - rateSamplingDays; i < dates.length; i++) {
+            closedIssuesOverSamplingDays += closedIssueDeltas[dates[i]];
+        }
+        let closeRate = closedIssuesOverSamplingDays / rateSamplingDays;
 
         // Attempt to project a delivery date for each bucket
+        let todaysDate = dates[dates.length - 1];
         Object.keys(buckets).forEach(bucket => {
-            let maxDate = Object.keys(openIssueCounts)
-                .reduce((a, b) => {
-                    if (openIssueCounts[a][bucket] === openIssueCounts[b][bucket]) {
-                        return a < b ? a : b;
-                    }
-                    return openIssueCounts[a][bucket] > openIssueCounts[b][bucket] ? a : b;
-                });
-            let maxIssues = openIssueCounts[maxDate][bucket];
             let todaysIssues = openIssueCounts[todaysDate][bucket];
-            let fromMaxToTodayDays = (dates.length - dates.indexOf(maxDate) - 1);
-            // TODO: Use a better estimate of team velocity
-            let rate = (maxIssues - todaysIssues) / fromMaxToTodayDays;
-            let totalDays = dates.indexOf(maxDate) + 1 + (maxIssues / rate);
-            let remainingDays = totalDays - dates.length;
+            let elapsedDays = dates.length;
+            let remainingDays = todaysIssues / closeRate;
 
             if (todaysIssues > 0 && remainingDays !== Infinity) {
                 let date = new Date(todaysDate);
@@ -134,11 +142,11 @@ class Burndown extends Component {
                     date.setDate(date.getDate() + 1);
                 }
                 let projection = [];
-                for (let i = 0; i < dates.indexOf(maxDate) + fromMaxToTodayDays + 1; i++) {
+                for (let i = 0; i < elapsedDays; i++) {
                     projection.push(null);
                 }
-                for (let i = fromMaxToTodayDays; i < totalDays; i++) {
-                    projection.push(maxIssues - (i * rate));
+                for (let i = 0; i < remainingDays; i++) {
+                    projection.push(todaysIssues - (i * closeRate));
                 }
                 projection.push(0);
                 datasets.push({
