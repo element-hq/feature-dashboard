@@ -43,7 +43,7 @@ class IssueTree extends Component {
         });
 
         // If we're interested in issues that weren't matched by the filter,
-        // thorw them into an 'unbucketed' category.
+        // throw them into an 'unbucketed' category.
         if (unbucketed) {
             let unbucketedItems = items.filter(item =>
                 !Object.values(buckets).reduce(Array.concat, []).includes(item));
