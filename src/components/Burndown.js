@@ -55,13 +55,20 @@ class Burndown extends Component {
         let closedIssueDeltas = {};
 
         // Initialise dates array and issue count per day for all relevant dates
-        let date = new Date(
-            Math.min(
-                ...issues.map(issue => new Date(issue.githubIssue.created_at))
-            )
-        );
+        // Start at from creation time of the earliest issue by default
+        // Limit to one year at most
+        // TODO: URL param for custom start date?
         let today = new Date();
         let tomorrow = new Date().setDate(today.getDate() + 1);
+        let oneYearAgo = new Date().setFullYear(today.getFullYear() - 1);
+        let date = new Date(
+            Math.max(
+                Math.min(
+                    ...issues.map(issue => new Date(issue.githubIssue.created_at))
+                ),
+                oneYearAgo
+            )
+        );
         while (date < tomorrow) {
             let day = dateFormat(date, 'yyyy-mm-dd');
             dates.push(day);
@@ -103,7 +110,7 @@ class Burndown extends Component {
             });
 
             buckets[bucket].forEach(issue => {
-                let start = dates.indexOf(dateFormat(issue.githubIssue.created_at, 'yyyy-mm-dd'));
+                let start = Math.max(0, dates.indexOf(dateFormat(issue.githubIssue.created_at, 'yyyy-mm-dd')));
                 let end = issue.githubIssue.closed_at ? dates.indexOf(dateFormat(issue.githubIssue.closed_at, 'yyyy-mm-dd')) : dates.length;
                 for (let n = start; n < end; n++) {
                     openIssueCounts[dates[n]][bucket] += 1;
