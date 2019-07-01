@@ -19,6 +19,24 @@ import React, { Component } from 'react';
 import dateFormat from 'dateformat';
 import { Line } from 'react-chartjs-2';
 
+const FILL_COLORS = [
+    'rgba(0, 40, 0, 0.2)',
+    'rgba(40, 0, 0, 0.2)',
+    'rgba(0, 0, 40, 0.2)',
+    'rgba(40, 40, 0, 0.2)',
+    'rgba(0, 40, 40, 0.2)',
+    'rgba(40, 0, 40, 0.2)',
+];
+
+const LINE_COLORS = [
+    'rgba(0, 40, 0, 0.5)',
+    'rgba(40, 0, 0, 0.5)',
+    'rgba(0, 0, 40, 0.5)',
+    'rgba(40, 40, 0, 0.5)',
+    'rgba(0, 40, 40, 0.5)',
+    'rgba(40, 0, 40, 0.5)',
+];
+
 class Burndown extends Component {
 
     render() {
@@ -88,7 +106,7 @@ class Burndown extends Component {
         let datasets = [];
 
         // Create a dataset for each bucket
-        Object.keys(buckets).forEach(bucket => {
+        Object.keys(buckets).forEach((bucket, index) => {
             // Initialise counts to 0 for this bucket for all dates
             Object.keys(openIssueCounts).forEach(date => {
                 openIssueCounts[date][bucket] = 0;
@@ -105,6 +123,7 @@ class Burndown extends Component {
                 label: `Open ${bucket} issues`,
                 data: dates.map(date => openIssueCounts[date][bucket]),
                 lineTension: 0,
+                backgroundColor: FILL_COLORS[index],
             });
         });
 
@@ -128,7 +147,7 @@ class Burndown extends Component {
 
         // Attempt to project a delivery date for each bucket
         let todaysDate = dates[dates.length - 1];
-        Object.keys(buckets).forEach(bucket => {
+        Object.keys(buckets).forEach((bucket, index) => {
             let todaysIssues = openIssueCounts[todaysDate][bucket];
             let elapsedDays = dates.length;
             let remainingDays = todaysIssues / closeRate;
@@ -153,10 +172,10 @@ class Burndown extends Component {
                     label: `Projected ${bucket} delivery`,
                     data: projection,
                     lineTension: 0,
-                    fill: false,
                     pointRadius: 0,
-                    borderColor: '#738d04',
-                    borderWidth: 1,
+                    borderColor: LINE_COLORS[index],
+                    borderWidth: 2,
+                    backgroundColor: FILL_COLORS[index],
                 });
             }
         });
