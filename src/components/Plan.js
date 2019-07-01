@@ -112,6 +112,14 @@ class Plan extends Component {
             );
         };
 
+        let sortItems = (a, b) => {
+            let states = ['done', 'wip', 'todo'];
+            if (a.state !== b.state) {
+                return states.indexOf(a.state) - states.indexOf(b.state);
+            }
+            return a.number - b.number;
+        };
+
         return (
             <div className="Plan">
                 <p className="label">{ this.props.labels.join(' ') }</p>
@@ -119,7 +127,7 @@ class Plan extends Component {
                     categories={ categories }
                     items={ this.props.issues }
                     renderItem={ renderItem }
-                    sortItems={ (a, b) => a.number - b.number }
+                    sortItems={ sortItems }
                 />
                 <TokenInput status={ this.props.connectionStatus }/>
             </div>
