@@ -24,7 +24,7 @@ class Burndown extends Component {
     render() {
         if (this.props.issues.length === 0) {
             return (
-                <div className="Burndown">
+                <div className="Burndown raised-box">
                     <h3>Loading data...</h3>
                 </div>
             );
@@ -123,7 +123,7 @@ class Burndown extends Component {
         };
 
         return (
-            <div className="Burndown">
+            <div className="Burndown raised-box">
                 <h3>{ this.props.labels.join(' ') }</h3>
                 <Line data={ data } options={ options }/>
             </div>

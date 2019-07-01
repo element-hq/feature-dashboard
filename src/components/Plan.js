@@ -121,7 +121,7 @@ class Plan extends Component {
         };
 
         return (
-            <div className="Plan">
+            <div className="Plan raised-box">
                 <p className="label">{ this.props.labels.join(' ') }</p>
                 <IssueTree
                     categories={ categories }
