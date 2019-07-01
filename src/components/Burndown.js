@@ -82,25 +82,15 @@ class Burndown extends Component {
         let sort = (a, b) => {
             return Number(a.split(":")[1]) - Number(b.split(":")[1]);
         };
-        // TODO: Do we wanted unbucketed for this view?
-        // let unbucketed = 'unphased';
-        let unbucketed;
 
         let headings = [...new Set(issues.filter(label).map(label))].sort(sort);
         let buckets = {};
-        headings.forEach(heading => {
-            buckets[heading] = issues.filter(item => label(item) === heading);
-        });
-
-        // If we're interested in issues that weren't matched by the filter,
-        // throw them into an 'unbucketed' category.
-        if (unbucketed) {
-            let unbucketedItems = issues.filter(item =>
-                !Object.values(buckets).reduce(Array.concat, []).includes(item));
-
-            if (unbucketedItems.length > 0) {
-                buckets[unbucketed] = unbucketedItems;
-            }
+        if (headings.length > 0) {
+            headings.forEach(heading => {
+                buckets[heading] = issues.filter(item => label(item) === heading);
+            });
+        } else {
+            buckets['unphased'] = issues;
         }
 
         let datasets = [];
