@@ -147,22 +147,30 @@ class Burndown extends Component {
 
         // Attempt to project a delivery date for each bucket
         let todaysDate = dates[dates.length - 1];
+        let elapsedDays = dates.length;
+        let previousBucketRemainingDays = 0;
         Object.keys(buckets).forEach((bucket, index) => {
             let todaysIssues = openIssueCounts[todaysDate][bucket];
-            let elapsedDays = dates.length;
             let remainingDays = todaysIssues / closeRate;
 
             if (todaysIssues > 0 && remainingDays !== Infinity) {
-                let date = new Date(todaysDate);
+                // Add additional days to the date axis for the extra days
+                // needed for this bucket.
+                let lastDate = dates[dates.length - 1];
+                let date = new Date(lastDate);
                 for (let i = 0; i < remainingDays + 1; i++) {
-                    let day = dateFormat(date, 'yyyy-mm-dd');
-                    dates.push(day);
-                    openIssueCounts[day] = {};
+                    dates.push(dateFormat(date, 'yyyy-mm-dd'));
                     date.setDate(date.getDate() + 1);
                 }
                 let projection = [];
                 for (let i = 0; i < elapsedDays; i++) {
                     projection.push(null);
+                }
+                // Since the lines are actually stacked, we need to use a
+                // constant value for any days where a previous bucket is being
+                // depleted below this one.
+                for (let i = 0; i < previousBucketRemainingDays; i++) {
+                    projection.push(todaysIssues);
                 }
                 for (let i = 0; i < remainingDays; i++) {
                     projection.push(todaysIssues - (i * closeRate));
@@ -178,6 +186,8 @@ class Burndown extends Component {
                     backgroundColor: FILL_COLORS[index],
                 });
             }
+
+            previousBucketRemainingDays += remainingDays;
         });
 
         let data = {
