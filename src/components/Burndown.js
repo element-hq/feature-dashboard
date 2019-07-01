@@ -146,6 +146,7 @@ class Burndown extends Component {
         let todaysDate = dates[dates.length - 1];
         let elapsedDays = dates.length;
         let previousBucketRemainingDays = 0;
+        let previousBucketFractionalDays = 0;
         Object.keys(buckets).forEach((bucket, index) => {
             let todaysIssues = openIssueCounts[todaysDate][bucket];
             let remainingDays = todaysIssues / closeRate;
@@ -169,10 +170,13 @@ class Burndown extends Component {
                 for (let i = 0; i < previousBucketRemainingDays; i++) {
                     projection.push(todaysIssues);
                 }
-                for (let i = 0; i < remainingDays; i++) {
+                for (let i = previousBucketFractionalDays; i < remainingDays + 1; i++) {
                     projection.push(todaysIssues - (i * closeRate));
                 }
-                projection.push(0);
+                // Store fractional days to the next date to help the next
+                // bucket stack smoothly.
+                previousBucketFractionalDays = Math.ceil(remainingDays) - remainingDays;
+
                 datasets.push({
                     label: `Projected ${bucket} delivery`,
                     data: projection,
