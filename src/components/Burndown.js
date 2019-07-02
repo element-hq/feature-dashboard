@@ -50,33 +50,6 @@ class Burndown extends Component {
             );
         }
 
-        let dates = [];
-        let openIssueCounts = {};
-        let closedIssueDeltas = {};
-
-        // Initialise dates array and issue count per day for all relevant dates
-        // Start at from creation time of the earliest issue by default
-        // Limit to one year at most
-        // TODO: URL param for custom start date?
-        let today = new Date();
-        let tomorrow = new Date().setDate(today.getDate() + 1);
-        let oneYearAgo = new Date().setFullYear(today.getFullYear() - 1);
-        let date = new Date(
-            Math.max(
-                Math.min(
-                    ...issues.map(issue => new Date(issue.githubIssue.created_at))
-                ),
-                oneYearAgo
-            )
-        );
-        while (date < tomorrow) {
-            let day = dateFormat(date, 'yyyy-mm-dd');
-            dates.push(day);
-            openIssueCounts[day] = {};
-            closedIssueDeltas[day] = 0;
-            date.setDate(date.getDate() + 1);
-        }
-
         // Attempt to bucket issues by phase
         // TODO: Extract this out as a generic issue categoriser
         let label = issue => {
@@ -98,6 +71,36 @@ class Burndown extends Component {
             });
         } else {
             buckets['unphased'] = issues;
+        }
+
+        let dates = [];
+        let openIssueCounts = {};
+        let closedIssueDeltas = {};
+
+        // Initialise dates array and issue count per day for all relevant dates
+        // Start at from creation time of the earliest issue by default
+        // Limit to one year at most
+        // TODO: URL param for custom start date?
+        let today = new Date();
+        let tomorrow = new Date().setDate(today.getDate() + 1);
+        let oneYearAgo = new Date().setFullYear(today.getFullYear() - 1);
+        let displayedIssues = Object.values(buckets).reduce((array, value) => {
+            return array.concat(value);
+        });
+        let date = new Date(
+            Math.max(
+                Math.min(
+                    ...displayedIssues.map(issue => new Date(issue.githubIssue.created_at))
+                ),
+                oneYearAgo
+            )
+        );
+        while (date < tomorrow) {
+            let day = dateFormat(date, 'yyyy-mm-dd');
+            dates.push(day);
+            openIssueCounts[day] = {};
+            closedIssueDeltas[day] = 0;
+            date.setDate(date.getDate() + 1);
         }
 
         let datasets = [];
