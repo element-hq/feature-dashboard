@@ -314,7 +314,7 @@ class Summary extends Component {
         );
 
         return (
-            <div className="Summary">
+            <div className="Summary raised-box">
                 <div className="Summary-Header">
                     <div className="Label">{ feature.labels.join(' ') }</div>
                     <div className="PercentComplete">{ this.calculatePercentCompleted(feature) }%</div>

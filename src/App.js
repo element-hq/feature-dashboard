@@ -125,7 +125,7 @@ class App extends Component {
                         <Route exact path="/" component= { RedirectLegacy } />
                         <Route component={ Fail } />
                     </Switch>
-                    <nav>
+                    <nav className="raised-box">
                         {this.routes.map(({ path, label }) => (
                             <Link key={path} to={this.pathWithQuery(path)}>
                                 {label}

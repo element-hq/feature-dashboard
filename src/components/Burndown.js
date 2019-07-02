@@ -19,94 +19,177 @@ import React, { Component } from 'react';
 import dateFormat from 'dateformat';
 import { Line } from 'react-chartjs-2';
 
+const FILL_COLORS = [
+    'rgba(0, 40, 0, 0.2)',
+    'rgba(40, 0, 0, 0.2)',
+    'rgba(0, 0, 40, 0.2)',
+    'rgba(40, 40, 0, 0.2)',
+    'rgba(0, 40, 40, 0.2)',
+    'rgba(40, 0, 40, 0.2)',
+];
+
+const LINE_COLORS = [
+    'rgba(0, 40, 0, 0.5)',
+    'rgba(40, 0, 0, 0.5)',
+    'rgba(0, 0, 40, 0.5)',
+    'rgba(40, 40, 0, 0.5)',
+    'rgba(0, 40, 40, 0.5)',
+    'rgba(40, 0, 40, 0.5)',
+];
+
 class Burndown extends Component {
 
     render() {
-        if (this.props.issues.length === 0) {
+        let { issues } = this.props;
+
+        if (issues.length === 0) {
             return (
-                <div className="Burndown">
+                <div className="Burndown raised-box">
                     <h3>Loading data...</h3>
                 </div>
             );
         }
 
         let dates = [];
-        let issueCounts = {};
+        let openIssueCounts = {};
+        let closedIssueDeltas = {};
 
-        let date = new Date(
-            Math.min(
-                ...this.props.issues.map(
-                    issue => new Date(issue.githubIssue.created_at)
-                )
-            )
-        );
+        // Initialise dates array and issue count per day for all relevant dates
+        // Start at from creation time of the earliest issue by default
+        // Limit to one year at most
+        // TODO: URL param for custom start date?
         let today = new Date();
         let tomorrow = new Date().setDate(today.getDate() + 1);
+        let oneYearAgo = new Date().setFullYear(today.getFullYear() - 1);
+        let date = new Date(
+            Math.max(
+                Math.min(
+                    ...issues.map(issue => new Date(issue.githubIssue.created_at))
+                ),
+                oneYearAgo
+            )
+        );
         while (date < tomorrow) {
             let day = dateFormat(date, 'yyyy-mm-dd');
             dates.push(day);
-            issueCounts[day] = 0;
+            openIssueCounts[day] = {};
+            closedIssueDeltas[day] = 0;
             date.setDate(date.getDate() + 1);
         }
 
-        this.props.issues.forEach(issue => {
-            let start = dates.indexOf(dateFormat(issue.githubIssue.created_at, 'yyyy-mm-dd'));
-            let end = issue.githubIssue.closed_at ? dates.indexOf(dateFormat(issue.githubIssue.closed_at, 'yyyy-mm-dd')) : dates.length;
-            for (let n = start; n < end; n++) {
-                issueCounts[dates[n]] += 1;
+        // Attempt to bucket issues by phase
+        // TODO: Extract this out as a generic issue categoriser
+        let label = issue => {
+            let phases = issue.labels.filter(label => label.name.startsWith('phase:'));
+            if (phases.length > 0) {
+                return phases[0].name;
             }
+            return null;
+        };
+        let sort = (a, b) => {
+            return Number(a.split(":")[1]) - Number(b.split(":")[1]);
+        };
+
+        let headings = [...new Set(issues.filter(label).map(label))].sort(sort);
+        let buckets = {};
+        if (headings.length > 0) {
+            headings.forEach(heading => {
+                buckets[heading] = issues.filter(item => label(item) === heading);
+            });
+        } else {
+            buckets['unphased'] = issues;
+        }
+
+        let datasets = [];
+
+        // Create a dataset for each bucket
+        Object.keys(buckets).forEach((bucket, index) => {
+            // Initialise counts to 0 for this bucket for all dates
+            Object.keys(openIssueCounts).forEach(date => {
+                openIssueCounts[date][bucket] = 0;
+            });
+
+            buckets[bucket].forEach(issue => {
+                let start = Math.max(0, dates.indexOf(dateFormat(issue.githubIssue.created_at, 'yyyy-mm-dd')));
+                let end = issue.githubIssue.closed_at ? dates.indexOf(dateFormat(issue.githubIssue.closed_at, 'yyyy-mm-dd')) : dates.length;
+                for (let n = start; n < end; n++) {
+                    openIssueCounts[dates[n]][bucket] += 1;
+                }
+            });
+            datasets.push({
+                label: `Open ${bucket} issues`,
+                data: dates.map(date => openIssueCounts[date][bucket]),
+                lineTension: 0,
+                backgroundColor: FILL_COLORS[index],
+            });
         });
 
-        let datasets = [
-            {
-                label: 'Open issues',
-                data: dates.map(date => issueCounts[date]),
-                lineTension: 0,
+        // Count closed issue deltas for entire project
+        issues.forEach(issue => {
+            let { closed_at } = issue.githubIssue;
+            if (!closed_at) {
+                return;
             }
-        ];
+            let closedDate = dateFormat(closed_at, 'yyyy-mm-dd');
+            closedIssueDeltas[closedDate] += 1;
+        });
 
-        let maxDate = Object.keys(issueCounts)
-            .reduce((a, b) => {
-                if (issueCounts[a] === issueCounts[b]) {
-                    return a < b ? a : b;
-                }
-                else {
-                    return issueCounts[a] > issueCounts[b] ? a : b
-                }
-            });
-
-        let maxIssues = issueCounts[maxDate];
-        let todaysIssues = issueCounts[dates[dates.length - 1]];
-        let elapsedDays = (dates.length - dates.indexOf(maxDate) - 1);
-        let rate = (maxIssues - todaysIssues) / elapsedDays;
-        let totalDays = dates.indexOf(maxDate) + 1 + (maxIssues / rate);
-        let remainingDays = totalDays - dates.length;
-
-        if (remainingDays !== Infinity) {
-            let date = new Date(dates[dates.length - 1]);
-            for (let i = 0; i < remainingDays + 1; i++) {
-                date.setDate(date.getDate() + 1);
-                dates.push(dateFormat(date, 'yyyy-mm-dd'));
-            }
-            let projection = [];
-            for (let i = 0; i < dates.indexOf(maxDate); i++) {
-                projection.push(null);
-            }
-            for (let i = 0; i < elapsedDays + remainingDays; i++) {
-                projection.push(maxIssues - (i * rate));
-            }
-            projection.push(0);
-            datasets.push({
-                label: 'Projected delivery',
-                data: projection,
-                lineTension: 0,
-                fill: false,
-                pointRadius: 0,
-                borderColor: '#738d04',
-                borderWidth: 1
-            });
-
+        // Look back up to 2 weeks to compute average rate per day
+        let rateSamplingDays = Math.min(dates.length, 14);
+        let closedIssuesOverSamplingDays = 0;
+        for (let i = dates.length - rateSamplingDays; i < dates.length; i++) {
+            closedIssuesOverSamplingDays += closedIssueDeltas[dates[i]];
         }
+        let closeRate = closedIssuesOverSamplingDays / rateSamplingDays;
+
+        // Attempt to project a delivery date for each bucket
+        let todaysDate = dates[dates.length - 1];
+        let elapsedDays = dates.length;
+        let previousBucketRemainingDays = 0;
+        let previousBucketFractionalDays = 0;
+        Object.keys(buckets).forEach((bucket, index) => {
+            let todaysIssues = openIssueCounts[todaysDate][bucket];
+            let remainingDays = todaysIssues / closeRate;
+
+            if (todaysIssues > 0 && remainingDays !== Infinity) {
+                // Add additional days to the date axis for the extra days
+                // needed for this bucket.
+                let lastDate = dates[dates.length - 1];
+                let date = new Date(lastDate);
+                for (let i = 0; i < remainingDays + 1; i++) {
+                    dates.push(dateFormat(date, 'yyyy-mm-dd'));
+                    date.setDate(date.getDate() + 1);
+                }
+                let projection = [];
+                for (let i = 0; i < elapsedDays; i++) {
+                    projection.push(null);
+                }
+                // Since the lines are actually stacked, we need to use a
+                // constant value for any days where a previous bucket is being
+                // depleted below this one.
+                for (let i = 0; i < previousBucketRemainingDays; i++) {
+                    projection.push(todaysIssues);
+                }
+                for (let i = previousBucketFractionalDays; i < remainingDays + 1; i++) {
+                    projection.push(todaysIssues - (i * closeRate));
+                }
+                // Store fractional days to the next date to help the next
+                // bucket stack smoothly.
+                previousBucketFractionalDays = Math.ceil(remainingDays) - remainingDays;
+
+                datasets.push({
+                    label: `Projected ${bucket} delivery`,
+                    data: projection,
+                    lineTension: 0,
+                    pointRadius: 0,
+                    borderColor: LINE_COLORS[index],
+                    borderWidth: 2,
+                    backgroundColor: FILL_COLORS[index],
+                });
+            }
+
+            previousBucketRemainingDays += remainingDays;
+        });
 
         let data = {
             labels: dates,
@@ -115,6 +198,7 @@ class Burndown extends Component {
         let options = {
             scales: {
                 yAxes: [{
+                    stacked: true,
                     ticks: {
                         min: 0
                     }
@@ -123,7 +207,7 @@ class Burndown extends Component {
         };
 
         return (
-            <div className="Burndown">
+            <div className="Burndown raised-box">
                 <h3>{ this.props.labels.join(' ') }</h3>
                 <Line data={ data } options={ options }/>
             </div>
