@@ -46,7 +46,9 @@ class IssueTree extends Component {
         // throw them into an 'unbucketed' category.
         if (unbucketed) {
             let unbucketedItems = items.filter(item =>
-                !Object.values(buckets).reduce(Array.concat, []).includes(item));
+                !Object.values(buckets).reduce((array, value) => {
+                    return array.concat(value);
+                }).includes(item));
 
             if (unbucketedItems.length > 0) {
                 buckets[unbucketed] = unbucketedItems;
