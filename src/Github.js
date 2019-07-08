@@ -167,9 +167,9 @@ class Issue {
         if (githubIssue.state === 'closed') {
             return 'done';
         }
-        else if (githubIssue.state === 'open' && (
-                githubIssue.assignees.length === 0 ||
-                githubIssue.assignee === undefined)
+        else if (
+            githubIssue.assignees.length === 0 ||
+            githubIssue.assignee === undefined
         ) {
             return 'todo';
         }

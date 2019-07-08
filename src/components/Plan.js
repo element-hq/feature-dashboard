@@ -59,8 +59,8 @@ class IssueTree extends Component {
             Object.keys(buckets).map(bucket => {
                 if (buckets[bucket].length > 0) {
                     return (
-                        <ul>
-                            <li className="heading" key={ bucket }>{ bucket }
+                        <ul key={ bucket }>
+                            <li className="heading">{ bucket }
                                 <IssueTree
                                     categories={ categories.slice(1) }
                                     items={ buckets[bucket] }
@@ -101,15 +101,22 @@ class Plan extends Component {
                 label: issue => issue.owner + '/' + issue.repo,
             });
         }
+        let renderLabel = (issue, label) => {
+            if (!issue.labels.some(({ name }) => name === label)) {
+                return null;
+            }
+            return <span className={'label ' + label}>
+                {` (${label})`}
+            </span>;
+        };
         let renderItem = issue => {
             return (
                 <li className="task" key={ issue.number }>
                     <a href={ issue.url } target="_blank" rel="noopener noreferrer" >{ `${issue.number} ${issue.title}` }</a>
                     <span className={ 'state ' + issue.state }>
-                    {
-                        issue.state === 'done' ? ' (done)' : issue.state === 'wip' ? ' (in progress)' : ''
-                    }
+                        { issue.state === 'done' ? ' (done)' : issue.state === 'wip' ? ' (in progress)' : '' }
                     </span>
+                    { renderLabel(issue, 'blocked') }
                 </li>
             );
         };
@@ -124,7 +131,7 @@ class Plan extends Component {
 
         return (
             <div className="Plan raised-box">
-                <p className="label">{ this.props.labels.join(' ') }</p>
+                <p className="query-labels">{ this.props.labels.join(' ') }</p>
                 <IssueTree
                     categories={ categories }
                     items={ this.props.issues }
