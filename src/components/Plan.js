@@ -59,8 +59,8 @@ class IssueTree extends Component {
             Object.keys(buckets).map(bucket => {
                 if (buckets[bucket].length > 0) {
                     return (
-                        <ul>
-                            <li className="heading" key={ bucket }>{ bucket }
+                        <ul key={ bucket }>
+                            <li className="heading">{ bucket }
                                 <IssueTree
                                     categories={ categories.slice(1) }
                                     items={ buckets[bucket] }
