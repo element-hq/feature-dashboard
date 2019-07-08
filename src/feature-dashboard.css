@@ -42,7 +42,8 @@ body {
     display: inline-block;
 }
 
-.Plan .state {
+.Plan .state,
+.Plan .label {
     opacity: 0.4;
 }
 
@@ -50,7 +51,11 @@ body {
     color: green;
 }
 
-.Plan .label {
+.Plan .label.blocked {
+    color: red;
+}
+
+.Plan .query-labels {
     margin-bottom: 0px;
 }
 
