@@ -46,17 +46,7 @@ class App extends Component {
          * when we've got a perfectly good HashRouter to do that for us?
          */
         if (window.location.hash.includes("?")) {
-            let query = queryString.parse(
-                window.location.hash.substring(
-                    window.location.hash.indexOf("?")
-                )
-            )
-            if (!Array.isArray(query.repo)) {
-                query.repo = [query.repo];
-            }
-            if (!Array.isArray(query.label)) {
-                query.label = [query.label];
-            }
+            const query = this.parseQueryFromHash(window.location.hash);
 
             let token = localStorage.getItem('github_token');
             let connection = await Github.getConnection(token);
@@ -103,12 +93,38 @@ class App extends Component {
         return path + "?" + queryString.stringify(this.state.query);
     }
 
+    parseQueryFromHash(hash) {
+        const query = queryString.parse(hash.substring(hash.indexOf("?")));
+        if (!Array.isArray(query.repo)) {
+            query.repo = [query.repo];
+        }
+        if (!Array.isArray(query.label)) {
+            query.label = [query.label];
+        }
+        return query;
+    }
+
+    onHashChange = ({ hash }) => {
+        const { query: previousQuery } = this.state;
+        // If the query param potions match, we don't need to reload, as this
+        // can be handled by switching components.
+        if (!hash.includes("?") && previousQuery === null) {
+            return;
+        }
+        if (hash.includes("?")) {
+            const query = this.parseQueryFromHash(hash);
+            if (JSON.stringify(previousQuery) === JSON.stringify(query)) {
+                return;
+            }
+        }
+        // Query components differ, so for now we require a reload to update.
+        window.location.reload();
+    }
+
     render() {
         return (
             <div>
-                <HashChange onChange={hash => {
-                    window.location.reload();
-                }} />
+                <HashChange onChange={this.onHashChange} />
                 <Router>
                     <Switch>
                         {this.routes.map(({ path, component: Component }) => (
