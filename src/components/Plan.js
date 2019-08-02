@@ -111,7 +111,7 @@ class Plan extends Component {
         };
         let renderItem = issue => {
             return (
-                <li className="task" key={ issue.number }>
+                <li className={`task ${issue.state}`} key={ issue.number }>
                     <a href={ issue.url } target="_blank" rel="noopener noreferrer" >{ `${issue.number} ${issue.title}` }</a>
                     <span className={ 'state ' + issue.state }>
                         { issue.state === 'done' ? ' (done)' : issue.state === 'wip' ? ' (in progress)' : '' }

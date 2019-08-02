@@ -42,8 +42,7 @@ body {
     display: inline-block;
 }
 
-.Plan .state,
-.Plan .label {
+.Plan .task.done {
     opacity: 0.4;
 }
 
