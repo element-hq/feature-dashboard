@@ -99,6 +99,12 @@ class Plan extends Component {
         if (this.props.repos.length > 1) {
             categories.push({
                 label: issue => issue.owner + '/' + issue.repo,
+                sort: (a, b) => {
+                    // Preserve repo ordering as entered by user
+                    const ai = this.props.repos.indexOf(a);
+                    const bi = this.props.repos.indexOf(b);
+                    return ai - bi;
+                },
             });
         }
         let renderLabel = (issue, label) => {
