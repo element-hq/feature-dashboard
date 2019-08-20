@@ -15,7 +15,7 @@
     "react-dom": "^16.8.3",
     "react-hashchange": "^0.1.0",
     "react-router-dom": "^5.0.0",
-    "react-scripts": "3.0.1"
+    "react-scripts": "3.1.1"
   },
   "scripts": {
     "start": "react-scripts start",
