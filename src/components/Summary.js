@@ -268,8 +268,38 @@ class SummaryRow extends Component {
                     this.makeLink(
                         repoFeature.repo,
                         repoFeature.labels,
-                        ['is:open'].concat(repoFeature.todo.others.concat(repoFeature.wip.others).map(issue => issue.number)),
-                        repoFeature.todo.others.concat(repoFeature.wip.others)
+                        [
+                            'is:open',
+                            'no:assignee',
+                            '-label:feature',
+                            '-label:bug',
+                        ],
+                        repoFeature.todo.others
+                    )
+                }</div>
+                <div>{
+                    this.makeLink(
+                        repoFeature.repo,
+                        repoFeature.labels,
+                        [
+                            'is:open',
+                            'assignee:*',
+                            '-label:feature',
+                            '-label:bug',
+                        ],
+                        repoFeature.wip.others
+                    )
+                }</div>
+                <div>{
+                    this.makeLink(
+                        repoFeature.repo,
+                        repoFeature.labels,
+                        [
+                            'is:closed',
+                            '-label:feature',
+                            '-label:bug',
+                        ],
+                        repoFeature.done.others
                     )
                 }</div>
                 <div className={ repoFeature.deliveryDate ? "" : "NoDate" }>{ repoFeature.deliveryDate ?
@@ -329,7 +359,9 @@ class Summary extends Component {
                     <div className="Summary-Column Bugs"></div>
                     <div className="Summary-Column Bugs"></div>
                     <div className="Summary-Column Bugs"></div>
-                    <div className="Summary-Column"></div>
+                    <div className="Summary-Column Implementation"></div>
+                    <div className="Summary-Column Implementation"></div>
+                    <div className="Summary-Column Implementation"></div>
                     <div className="Summary-Column"></div>
                     <div className="Summary-Column"></div>
                     <div className="Summary-Row Summary-TableHeader">
@@ -342,7 +374,9 @@ class Summary extends Component {
                         <div>P3</div>
                         <div>WIP</div>
                         <div>Fixed</div>
-                        <div>Other</div>
+                        <div><span className="MetaTitleHolder"><span className="MetaTitle">Other</span></span>Todo</div>
+                        <div>WIP</div>
+                        <div>Done</div>
                         <div>Delivery</div>
                         <div></div>
                     </div>
