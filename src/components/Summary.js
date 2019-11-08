@@ -17,8 +17,6 @@ limitations under the License.
 import React, { Component } from 'react';
 import dateFormat from 'dateformat';
 
-import TokenInput from './TokenInput';
-
 function template(labels, repo) {
     return {
         labels: labels,
@@ -382,7 +380,6 @@ class Summary extends Component {
                     </div>
                     { rows }
                 </div>
-                <TokenInput status={ this.props.connectionStatus }/>
             </div>
         );
     }

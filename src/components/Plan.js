@@ -16,8 +16,6 @@ limitations under the License.
 
 import React, { Component } from 'react';
 
-import TokenInput from './TokenInput';
-
 class IssueTree extends Component {
 
     render() {
@@ -144,7 +142,6 @@ class Plan extends Component {
                     renderItem={ renderItem }
                     sortItems={ sortItems }
                 />
-                <TokenInput status={ this.props.connectionStatus }/>
             </div>
         )
 
