@@ -18,6 +18,7 @@ import React, { Component } from 'react';
 
 import dateFormat from 'dateformat';
 import { Line } from 'react-chartjs-2';
+import Github from '../Github';
 
 const FILL_COLORS = [
     'rgba(0, 40, 0, 0.2)',
@@ -39,8 +40,42 @@ const LINE_COLORS = [
 
 class Burndown extends Component {
 
+    constructor(props) {
+        super();
+        this.state = {
+            issues: [],
+            repos: [],
+            labels: [],
+        }
+    }
+
+    async update(props) {
+        if (props.connection &&
+            props.query) {
+            this.setState({
+                labels: props.query.label,
+                repos: props.query.repo,
+                issues: await Github.getIssues(
+                    props.connection.octokit,
+                    props.query.label,
+                    props.query.repo
+                ),
+            });
+        }
+    }
+
+    async componentWillReceiveProps(nextProps) {
+        if (nextProps.query !== this.props.query) {
+            await this.update(nextProps);
+        }
+    }
+
+    async componentDidMount() {
+        this.update(this.props);
+    }
+
     render() {
-        let { issues } = this.props;
+        let { issues } = this.state;
 
         if (issues.length === 0) {
             return (
@@ -211,7 +246,7 @@ class Burndown extends Component {
 
         return (
             <div className="Burndown raised-box">
-                <h3>{ this.props.labels.join(' ') }</h3>
+                <h3>{ this.state.labels.join(' ') }</h3>
                 <Line data={ data } options={ options }/>
             </div>
         );

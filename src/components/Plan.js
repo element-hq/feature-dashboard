@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import React, { Component } from 'react';
+import Github from '../Github';
 
 class IssueTree extends Component {
 
@@ -78,6 +79,40 @@ class IssueTree extends Component {
 
 class Plan extends Component {
 
+    constructor(props) {
+        super();
+        this.state = {
+            issues: [],
+            repos: [],
+            labels: [],
+        }
+    }
+
+    async update(props) {
+        if (props.connection &&
+            props.query) {
+            this.setState({
+                labels: props.query.label,
+                repos: props.query.repo,
+                issues: await Github.getIssues(
+                    props.connection.octokit,
+                    props.query.label,
+                    props.query.repo
+                ),
+            });
+        }
+    }
+
+    async componentWillReceiveProps(nextProps) {
+        if (nextProps.query !== this.props.query) {
+            await this.update(nextProps);
+        }
+    }
+
+    async componentDidMount() {
+        this.update(this.props);
+    }
+
     render() {
         let categories = [
             {
@@ -94,13 +129,13 @@ class Plan extends Component {
                 unbucketed: 'unphased'
             }
         ];
-        if (this.props.repos.length > 1) {
+        if (this.state.repos.length > 1) {
             categories.push({
                 label: issue => issue.owner + '/' + issue.repo,
                 sort: (a, b) => {
                     // Preserve repo ordering as entered by user
-                    const ai = this.props.repos.indexOf(a);
-                    const bi = this.props.repos.indexOf(b);
+                    const ai = this.state.repos.indexOf(a);
+                    const bi = this.state.repos.indexOf(b);
                     return ai - bi;
                 },
             });
@@ -135,10 +170,10 @@ class Plan extends Component {
 
         return (
             <div className="Plan raised-box">
-                <p className="query-labels">{ this.props.labels.join(' ') }</p>
+                <p className="query-labels">{ this.state.labels.join(' ') }</p>
                 <IssueTree
                     categories={ categories }
-                    items={ this.props.issues }
+                    items={ this.state.issues }
                     renderItem={ renderItem }
                     sortItems={ sortItems }
                 />

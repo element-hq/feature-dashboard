@@ -20,6 +20,7 @@ import queryString from 'query-string';
 import HashChange from 'react-hashchange';
 
 import Github from './Github';
+
 import Fail from './components/Fail';
 import Plan from './components/Plan';
 import Summary from './components/Summary';
@@ -42,40 +43,22 @@ class App extends Component {
 
     constructor(props) {
         super();
+
         this.state = {
             query: null,
-            issues: [],
-            repos: [],
-            labels: [],
-            connectionStatus: 'connecting'
+            connection: null
         }
     }
 
     async componentDidMount() {
         const token = getToken();
 
-        /*
-         * FIXME: This _looks_ wrong. Why are we fiddling around parsing the location.hash
-         * when we've got a perfectly good HashRouter to do that for us?
-         */
-        if (window.location.hash.includes("?")) {
-            const query = this.parseQueryFromHash(window.location.hash);
+        this.setState({
+            connection: await Github.getConnection(token),
+            query: this.parseQueryFromHash(window.location.hash),
+        });
 
-            let connection = await Github.getConnection(token);
-            this.setState({connectionStatus: connection.status });
-
-            document.title = query.label.join(' ');
-
-            let issues = await Github.getIssues(connection.octokit, query.label, query.repo);
-
-            this.setState({
-                query,
-                labels: query.label,
-                repos: query.repo,
-                issues: issues
-            });
-
-        }
+        console.log('Got query!', this.state.query);
     }
 
     get routes() {
@@ -143,10 +126,9 @@ class App extends Component {
                             <Route path={path} key={path}
                                 render={props => <Component
                                     {...props}
-                                    repos={this.state.repos}
-                                    labels={this.state.labels}
-                                    issues={this.state.issues}
-                                    connectionStatus={this.state.connectionStatus}
+                                    query={this.state.query}
+                                    token={this.state.token}
+                                    connection={this.state.connection}
                                 />}
                             />
                         ))}
@@ -173,7 +155,7 @@ class App extends Component {
  * https://host/?repo=example-org/example-repo&...
  *
  * I want to redirect those links to the summary view, but I wasn't able to
- * make ReactRouter execute the redirect without making a mess of the query 
+ * make ReactRouter execute the redirect without making a mess of the query
  * params:
  *
  * https://host/?repo=... -> https://host/?repo=...#/summary

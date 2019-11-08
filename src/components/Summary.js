@@ -16,6 +16,7 @@ limitations under the License.
 
 import React, { Component } from 'react';
 import dateFormat from 'dateformat';
+import Github from '../Github';
 
 function template(labels, repo) {
     return {
@@ -63,7 +64,6 @@ function establishDeliveryDate(issue, deliveryDate) {
     }
 }
 
-
 function generateSummary(issues, labels, searchRepos) { 
     const repos = {};
     for (const repo of searchRepos) {
@@ -88,6 +88,8 @@ function generateSummary(issues, labels, searchRepos) {
 
 
 class SummaryRow extends Component {
+
+
     calculatePercentCompleted(repoFeature) {
         let counted = ['issues', 'p1bugs'];
 
@@ -310,6 +312,41 @@ class SummaryRow extends Component {
 }
 
 class Summary extends Component {
+
+    constructor(props) {
+        super();
+        this.state = {
+            issues: [],
+            repos: [],
+            labels: [],
+        }
+    }
+
+    async update(props) {
+        if (props.connection &&
+            props.query) {
+            this.setState({
+                labels: props.query.label,
+                repos: props.query.repo,
+                issues: await Github.getIssues(
+                    props.connection.octokit,
+                    props.query.label,
+                    props.query.repo
+                )
+            });
+        }
+    }
+
+    async componentWillReceiveProps(nextProps) {
+        if (nextProps.query !== this.props.query) {
+            await this.update(nextProps);
+        }
+    }
+
+    async componentDidMount() {
+        this.update(this.props);
+    }
+
     calculatePercentCompleted(feature) {
         let counted = ['issues', 'p1bugs'];
 
@@ -332,9 +369,9 @@ class Summary extends Component {
 
     render() {
         let feature = generateSummary(
-            this.props.issues,
-            this.props.labels,
-            this.props.repos
+            this.state.issues,
+            this.state.labels,
+            this.state.repos
         );
 
         let rows = feature.repos.map(repo => <SummaryRow repoFeature={ repo }
