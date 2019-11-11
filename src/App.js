@@ -87,11 +87,12 @@ class App extends Component {
 
     parseQueryFromHash(hash) {
         const query = queryString.parse(hash.substring(hash.indexOf("?")));
-        if (!Array.isArray(query.repo)) {
-            query.repo = [query.repo];
-        }
-        if (!Array.isArray(query.label)) {
-            query.label = [query.label];
+        // Homogenise values from the query params so that we're always dealing with
+        // arrays.
+        for (const [key, value] of Object.entries(query)) {
+            if (!Array.isArray(value)) {
+                query[key] = [value];
+            }
         }
         return query;
     }
