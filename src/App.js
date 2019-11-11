@@ -80,7 +80,9 @@ class App extends Component {
         if (!this.state.query) {
             return path;
         }
-        return path + "?" + queryString.stringify(this.state.query);
+        return path + "?" +
+            queryString.stringify(this.state.query)
+            .replace(/%2F/g, '/'); // Keep the URL human-readable
     }
 
     parseQueryFromHash(hash) {
