@@ -46,19 +46,14 @@ class App extends Component {
 
         this.state = {
             query: null,
-            connection: null
+            token: getToken()
         }
     }
 
     async componentDidMount() {
-        const token = getToken();
-
         this.setState({
-            connection: await Github.getConnection(token),
             query: this.parseQueryFromHash(window.location.hash),
         });
-
-        console.log('Got query!', this.state.query);
     }
 
     get routes() {
@@ -128,7 +123,6 @@ class App extends Component {
                                     {...props}
                                     query={this.state.query}
                                     token={this.state.token}
-                                    connection={this.state.connection}
                                 />}
                             />
                         ))}

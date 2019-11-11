@@ -19,39 +19,14 @@ import graphql from '@octokit/graphql';
 
 class Github {
 
-    static async getConnection(token) {
-        if (!token) {
-            return {
-                octokit: new Octokit(),
-                status: 'unauthenticated'
-            }
-        }
-
-        let connection = undefined;
-
-        let octokit = new Octokit({
+    static getOctokit(token) {
+        return new Octokit({
             auth: `token ${token}`
         });
-        await octokit.request('GET /')
-            .then(_ => {
-                connection = {
-                    octokit: octokit,
-                    status: 'authenticated'
-                }
-            })
-            .catch(e => {
-                if (e.name === 'HttpError' && e.status === 401) {
-                    connection = {
-                        octokit: new Octokit(),
-                        status: 'invalid-credentials'
-                    }
-                }
-            });
-
-        return connection;
     }
 
-    static async getTaskCount(octokit, issue) {
+    static async getTaskCount(token, issue) {
+        let octokit = this.getOcotokit(token);
         let options = octokit.issues.listComments.endpoint.merge({
             owner: issue.owner,
             repo: issue.repo,
@@ -106,7 +81,8 @@ class Github {
         }
     }
 
-    static async getIssues(octokit, labels, searchRepos) {
+    static async getIssues(token, labels, searchRepos) {
+        let octokit = this.getOctokit(token);
         let searchString = searchRepos.map(repo => 'repo:' + repo)
             .join(' ') + ' ' + labels.map(label => `label:${label}`).join(' ');
 

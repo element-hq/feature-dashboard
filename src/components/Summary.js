@@ -323,13 +323,12 @@ class Summary extends Component {
     }
 
     async update(props) {
-        if (props.connection &&
-            props.query) {
+        if (props.query) {
             this.setState({
                 labels: props.query.label,
                 repos: props.query.repo,
                 issues: await Github.getIssues(
-                    props.connection.octokit,
+                    props.token,
                     props.query.label,
                     props.query.repo
                 )
