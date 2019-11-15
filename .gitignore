@@ -62,4 +62,4 @@ typings/
 
 build
 
-*.env
+secrets.env
