@@ -3,7 +3,7 @@ FROM nginx:latest
 MAINTAINER Thomas Lant "tom@matrix.org"
 
 RUN rm -v /etc/nginx/nginx.conf
-ADD  nginx.conf /etc/nginx/
+ADD nginx.conf /etc/nginx/
 
 RUN apt-get update -y && \
     apt-get install -y curl gnupg
@@ -20,6 +20,3 @@ COPY . .
 RUN yarn && yarn build
 
 RUN cp -r /build/build/* /usr/share/nginx/html/
-
-#ADD build /var/www/html/
-#ADD build /usr/share/nginx/html/
