@@ -44,7 +44,64 @@ class Github {
         }
     }
 
-    static async getFullIssues(labels, searchRepos) {
+    static async getEpics(token, milestones, repos) {
+        // Only the first milestone for now
+        const milestone = milestones[0];
+        const epicMilestone = await this.getMilestone(token, milestone);
+        let issues = [];
+        for (const userStory of epicMilestone) {
+            let label = `story:${userStory.number}`;
+            let storyIssues = await this.getFullIssues(token, [label], repos);
+            for (var storyIssue of storyIssues) {
+                storyIssue.story = userStory;
+            }
+            issues = issues.concat(storyIssues);
+        }
+        console.log('issues', issues);
+        return issues;
+    }
+
+    static async getMilestone(token, milestone) {
+        const query = `
+            query milestones($owner: String!, $project: String!, $number: Int!)  {
+                repository(owner: $owner, name: $project) {
+                    milestone(number: $number) {
+                        title
+                        issues(first:100) {
+                            edges {
+                                cursor
+                                node {
+                                    title
+                                    number
+                                }
+                            }
+                        }
+                    }
+                }
+            }`
+        let [owner, project, _, number] = milestone.split('/');
+
+        let results = await graphql(query, {
+            headers: {
+                authorization: `token ${token}`
+            },
+            owner: owner,
+            project: project,
+            number: parseInt(number, 10)
+        });
+
+        const stories = results.repository.milestone.issues.edges.map(result =>
+            {
+                return {
+                    number: result.node.number,
+                    title: result.node.title
+                };
+            });
+                    ;
+        return stories;
+    }
+
+    static async getFullIssues(token, labels, searchRepos) {
         const query = `
             query issueBodiesOverTime($owner: String!, $project: String!, $labels: [String!]!) {
                 repository(owner: $owner, name: $project) {
@@ -53,7 +110,30 @@ class Github {
                             cursor
                             node {
                                 number
+                                title
                                 body
+                                url
+                                state
+                                assignees(first: 100) {
+                                    edges {
+                                        node {
+                                            name
+                                        }
+                                    }
+                                }
+                                repository {
+                                    owner {
+                                        login
+                                    }
+                                    name
+                                }
+                                labels(first: 100) {
+                                    edges {
+                                        node {
+                                            name
+                                        }
+                                    }
+                                }
                                 userContentEdits(first: 100) {
                                     edges {
                                         node {
@@ -67,18 +147,21 @@ class Github {
                     }
                 }
             }`
+        let issues = [];
         for (const repo of searchRepos) {
             let [owner, project] = repo.split('/');
-            let issues = await graphql(query, {
+            let results = await graphql(query, {
                 headers: {
-                    authorization: "token f3b7ff551d31170bef759d1a6889ee62ce5b3a83"
+                    authorization: `token ${token}`
                 },
                 owner: owner,
                 project: project,
                 labels: labels
             });
-            console.log(issues);
+            issues = issues.concat(results.repository.issues.edges.map(
+                issue => Issue.fromGraphql(issue.node)));
         }
+        return issues;
     }
 
     static async getIssues(token, labels, searchRepos) {
@@ -92,38 +175,53 @@ class Github {
 
         let githubIssues = await octokit.paginate(options);
 
-        return githubIssues.map(issue => new Issue(issue));
+        return githubIssues.map(issue => Issue.fromOctokit(issue));
     }
 
 }
 
 class Issue {
 
-    constructor(githubIssue) {
+    static fromOctokit(octokitIssue) {
+        const labels = octokitIssue.labels.map(label => label.name);
+        const [owner, repo] = octokitIssue.split('/').slice(-2);
+        const assigned = octokitIssue.assignees.length > 0 || octokitIssue.assignee;
 
-        this.githubIssue = githubIssue;
-        this.url = githubIssue.html_url;
-        this.labels = githubIssue.labels.map(label => {
-            return {
-                color: label.color,
-                name: label.name
-            }
-        });
-        this.progress = undefined;
-        this.title = githubIssue.title;
-        this.number = githubIssue.number;
-        this.assignees = githubIssue.assignees;
-
-        let components = githubIssue.repository_url.split('/');
-        [this.owner, this.repo] = components.slice(components.length - 2);
-
-        this.type = Issue.getType(githubIssue);
-        this.state = Issue.getState(githubIssue);
-
+        return {
+            origin: 'octokit',
+            source: octokitIssue,
+            url: octokitIssue.html_url,
+            title: octokitIssue.title,
+            number: octokitIssue.number,
+            type: Issue.getType(labels),
+            state: Issue.getState(octokitIssue.state, assigned),
+            labels: labels,
+            owner: owner,
+            repo: repo,
+            assigned: assigned,
+        }
     }
 
-    static getType(githubIssue) {
-        let labels = githubIssue.labels.map(label => label.name);
+    static fromGraphql(graphqlIssue) {
+        const labels = graphqlIssue.labels.edges.map(x => x.node.name);
+        const assigned = graphqlIssue.assignees.edges.length > 0;
+        console.log('issue', graphqlIssue, assigned);
+        return {
+            origin: 'graphql',
+            source: graphqlIssue,
+            url: graphqlIssue.url,
+            title: graphqlIssue.title,
+            number: graphqlIssue.number,
+            type: Issue.getType(labels),
+            state: Issue.getState(graphqlIssue.state, assigned),
+            labels: labels,
+            owner: graphqlIssue.repository.owner.login,
+            repo: graphqlIssue.repository.name,
+            assigned: assigned
+        }
+    }
+
+    static getType(labels) {
         if (labels.includes('bug')) {
             for (const priority of ['p1', 'p2', 'p3']) {
                 if (labels.includes(priority)) {
@@ -139,18 +237,15 @@ class Issue {
         return 'others';
     }
 
-    static getState(githubIssue) {
-        if (githubIssue.state === 'closed') {
+    static getState(githubState, assigned) {
+        if (githubState === 'CLOSED') {
             return 'done';
         }
-        else if (
-            githubIssue.assignees.length === 0 ||
-            githubIssue.assignee === undefined
-        ) {
-            return 'todo';
+        else if (assigned) {
+            return 'wip';
         }
         else {
-            return 'wip';
+            return 'todo';
         }
     }
 

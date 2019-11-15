@@ -19,12 +19,11 @@ import { HashRouter as Router, Route, Switch, Link } from "react-router-dom";
 import queryString from 'query-string';
 import HashChange from 'react-hashchange';
 
-import Github from './Github';
-
 import Fail from './components/Fail';
 import Plan from './components/Plan';
 import Summary from './components/Summary';
 import Burndown from './components/Burndown';
+import Epic from './components/Epic';
 
 import './feature-dashboard.css';
 
@@ -72,6 +71,11 @@ class App extends Component {
                 path: "/burndown",
                 label: "Burndown",
                 component: Burndown,
+            },
+            {
+                path: "/epic",
+                label: "Epic",
+                component: Epic,
             },
         ];
     }
