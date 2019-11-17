@@ -114,6 +114,8 @@ class Github {
                                 body
                                 url
                                 state
+                                createdAt
+                                closedAt
                                 assignees(first: 100) {
                                     edges {
                                         node {
@@ -184,8 +186,10 @@ class Issue {
 
     static fromOctokit(octokitIssue) {
         const labels = octokitIssue.labels.map(label => label.name);
-        const [owner, repo] = octokitIssue.split('/').slice(-2);
+        const [owner, repo] = octokitIssue.repository_url.split('/').slice(-2);
         const assigned = octokitIssue.assignees.length > 0 || octokitIssue.assignee;
+        const assignees = (octokitIssue.assignees ||
+            [octokitIssue.assignee]).map(assignee => assignee.login);
 
         return {
             origin: 'octokit',
@@ -199,13 +203,16 @@ class Issue {
             owner: owner,
             repo: repo,
             assigned: assigned,
+            assignees: assignees,
+            createdAt: octokitIssue.created_at,
+            closedAt: octokitIssue.closed_at
         }
     }
 
     static fromGraphql(graphqlIssue) {
         const labels = graphqlIssue.labels.edges.map(x => x.node.name);
         const assigned = graphqlIssue.assignees.edges.length > 0;
-        console.log('issue', graphqlIssue, assigned);
+        const assignees = graphqlIssue.assignees.edges.map(assignee => assignee.login);
         return {
             origin: 'graphql',
             source: graphqlIssue,
@@ -217,7 +224,10 @@ class Issue {
             labels: labels,
             owner: graphqlIssue.repository.owner.login,
             repo: graphqlIssue.repository.name,
-            assigned: assigned
+            assigned: assigned,
+            assignees: assignees,
+            createdAt: graphqlIssue.createdAt,
+            closedAt: graphqlIssue.closedAt
         }
     }
 
@@ -238,7 +248,7 @@ class Issue {
     }
 
     static getState(githubState, assigned) {
-        if (githubState === 'CLOSED') {
+        if (githubState.toUpperCase() === 'CLOSED') {
             return 'done';
         }
         else if (assigned) {

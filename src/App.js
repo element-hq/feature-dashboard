@@ -19,6 +19,8 @@ import { HashRouter as Router, Route, Switch, Link } from "react-router-dom";
 import queryString from 'query-string';
 import HashChange from 'react-hashchange';
 
+import Github from './Github';
+
 import Fail from './components/Fail';
 import Plan from './components/Plan';
 import Summary from './components/Summary';
@@ -38,20 +40,35 @@ function getToken() {
     }
 }
 
+class FeatureDashboard {
+    static async getIssues(token, query) {
+        return await Github.getIssues(
+            token,
+            query.labels,
+            query.repos
+        );
+    }
+}
+
 class App extends Component {
 
     constructor(props) {
         super();
 
         this.state = {
-            query: null,
-            token: getToken()
+            query: {
+                repos: [],
+                labels: []
+            },
+            issues: []
         }
     }
 
     async componentDidMount() {
+        let query = this.parseQueryFromHash(window.location.hash);
         this.setState({
             query: this.parseQueryFromHash(window.location.hash),
+            issues: await FeatureDashboard.getIssues(getToken(), query)
         });
     }
 
@@ -86,19 +103,26 @@ class App extends Component {
         }
         return path + "?" +
             queryString.stringify(this.state.query)
-            .replace(/%2F/g, '/'); // Keep the URL human-readable
+            .replace(/s=/g, '=') // Undo the pluralization fudge
+            .replace(/%3A/g, ':') // Maintain human-readable colons...
+            .replace(/%2F/g, '/'); // ...and slashes.
     }
 
     parseQueryFromHash(hash) {
         const query = queryString.parse(hash.substring(hash.indexOf("?")));
         // Homogenise values from the query params so that we're always dealing with
         // arrays.
+        let parsed = {};
         for (const [key, value] of Object.entries(query)) {
+            let plural_key = `${key}s`;
             if (!Array.isArray(value)) {
-                query[key] = [value];
+                parsed[plural_key] = [value];
+            }
+            else {
+                parsed[plural_key] = value;
             }
         }
-        return query;
+        return parsed;
     }
 
     onHashChange = ({ hash }) => {
@@ -129,7 +153,7 @@ class App extends Component {
                                 render={props => <Component
                                     {...props}
                                     query={this.state.query}
-                                    token={this.state.token}
+                                    issues={this.state.issues}
                                 />}
                             />
                         ))}
