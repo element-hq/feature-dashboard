@@ -16,51 +16,17 @@ limitations under the License.
 
 import React, { Component } from 'react';
 import IssueTree from './IssueTree'
-import Github from '../Github';
 
 
 class Plan extends Component {
-
-    constructor(props) {
-        super();
-        this.state = {
-            issues: [],
-            repos: [],
-            labels: [],
-        }
-    }
-
-    async update(props) {
-        if (props.query) {
-            this.setState({
-                labels: props.query.label,
-                repos: props.query.repo,
-                issues: await Github.getIssues(
-                    props.token,
-                    props.query.label,
-                    props.query.repo
-                ),
-            });
-        }
-    }
-
-    async componentWillReceiveProps(nextProps) {
-        if (nextProps.query !== this.props.query) {
-            await this.update(nextProps);
-        }
-    }
-
-    async componentDidMount() {
-        this.update(this.props);
-    }
 
     render() {
         let categories = [
             {
                 label: issue => {
-                    let phases = issue.labels.filter(label => label.name.startsWith('phase:'));
+                    let phases = issue.labels.filter(label => label.startsWith('phase:'));
                     if (phases.length > 0) {
-                        return phases[0].name;
+                        return phases[0];
                     }
                     else return null;
                 },
@@ -70,13 +36,14 @@ class Plan extends Component {
                 unbucketed: 'unphased'
             }
         ];
-        if (this.state.repos.length > 1) {
+        if (this.props.query &&
+            this.props.query.repos.length > 1) {
             categories.push({
                 label: issue => issue.owner + '/' + issue.repo,
                 sort: (a, b) => {
                     // Preserve repo ordering as entered by user
-                    const ai = this.state.repos.indexOf(a);
-                    const bi = this.state.repos.indexOf(b);
+                    const ai = this.props.query.repos.indexOf(a);
+                    const bi = this.props.query.repos.indexOf(b);
                     return ai - bi;
                 },
             });
@@ -111,10 +78,10 @@ class Plan extends Component {
 
         return (
             <div className="Plan raised-box">
-                <p className="query-labels">{ this.state.labels.join(' ') }</p>
+                <p className="query-labels">{ this.props.query.labels.join(' ') }</p>
                 <IssueTree
                     categories={ categories }
-                    items={ this.state.issues }
+                    items={ this.props.issues }
                     renderItem={ renderItem }
                     sortItems={ sortItems }
                 />

@@ -16,7 +16,7 @@ limitations under the License.
 
 import React, { Component } from 'react';
 import dateFormat from 'dateformat';
-import Github from '../Github';
+
 
 function template(labels, repo) {
     return {
@@ -106,6 +106,7 @@ class SummaryRow extends Component {
     }
 
     getAssigneesFilter(issues) {
+        console.log(issues);
         let filter = [...new Set(issues.map(issue => issue.assignees.map(assignee => assignee.login))
             .reduce((a, b) => a.concat(b), []))]
             .map(assignee => `assignee:${assignee}`)
@@ -313,39 +314,6 @@ class SummaryRow extends Component {
 
 class Summary extends Component {
 
-    constructor(props) {
-        super();
-        this.state = {
-            issues: [],
-            repos: [],
-            labels: [],
-        }
-    }
-
-    async update(props) {
-        if (props.query) {
-            this.setState({
-                labels: props.query.label,
-                repos: props.query.repo,
-                issues: await Github.getIssues(
-                    props.token,
-                    props.query.label,
-                    props.query.repo
-                )
-            });
-        }
-    }
-
-    async componentWillReceiveProps(nextProps) {
-        if (nextProps.query !== this.props.query) {
-            await this.update(nextProps);
-        }
-    }
-
-    async componentDidMount() {
-        this.update(this.props);
-    }
-
     calculatePercentCompleted(feature) {
         let counted = ['issues', 'p1bugs'];
 
@@ -368,9 +336,9 @@ class Summary extends Component {
 
     render() {
         let feature = generateSummary(
-            this.state.issues,
-            this.state.labels,
-            this.state.repos
+            this.props.issues,
+            this.props.query.labels,
+            this.props.query.repos
         );
 
         let rows = feature.repos.map(repo => <SummaryRow repoFeature={ repo }

@@ -18,7 +18,6 @@ import React, { Component } from 'react';
 
 import dateFormat from 'dateformat';
 import { Line } from 'react-chartjs-2';
-import Github from '../Github';
 
 const FILL_COLORS = [
     'rgba(0, 40, 0, 0.2)',
@@ -40,41 +39,8 @@ const LINE_COLORS = [
 
 class Burndown extends Component {
 
-    constructor(props) {
-        super();
-        this.state = {
-            issues: [],
-            repos: [],
-            labels: [],
-        }
-    }
-
-    async update(props) {
-        if ( props.query) {
-            this.setState({
-                labels: props.query.label,
-                repos: props.query.repo,
-                issues: await Github.getIssues(
-                    props.token,
-                    props.query.label,
-                    props.query.repo
-                ),
-            });
-        }
-    }
-
-    async componentWillReceiveProps(nextProps) {
-        if (nextProps.query !== this.props.query) {
-            await this.update(nextProps);
-        }
-    }
-
-    async componentDidMount() {
-        this.update(this.props);
-    }
-
     render() {
-        let { issues } = this.state;
+        let { issues } = this.props;
 
         if (issues.length === 0) {
             return (
@@ -87,9 +53,9 @@ class Burndown extends Component {
         // Attempt to bucket issues by phase
         // TODO: Extract this out as a generic issue categoriser
         let label = issue => {
-            let phases = issue.labels.filter(label => label.name.startsWith('phase:'));
+            let phases = issue.labels.filter(label => label.startsWith('phase:'));
             if (phases.length > 0) {
-                return phases[0].name;
+                return phases[0];
             }
             return null;
         };
@@ -124,7 +90,7 @@ class Burndown extends Component {
         let date = new Date(
             Math.max(
                 Math.min(
-                    ...displayedIssues.map(issue => new Date(issue.githubIssue.created_at))
+                    ...displayedIssues.map(issue => new Date(issue.createdAt))
                 ),
                 threeMonthsAgo
             )
@@ -147,8 +113,8 @@ class Burndown extends Component {
             });
 
             buckets[bucket].forEach(issue => {
-                let start = Math.max(0, dates.indexOf(dateFormat(issue.githubIssue.created_at, 'yyyy-mm-dd')));
-                let end = issue.githubIssue.closed_at ? dates.indexOf(dateFormat(issue.githubIssue.closed_at, 'yyyy-mm-dd')) : dates.length;
+                let start = Math.max(0, dates.indexOf(dateFormat(issue.createdAt, 'yyyy-mm-dd')));
+                let end = issue.closedAt ? dates.indexOf(dateFormat(issue.closedAt, 'yyyy-mm-dd')) : dates.length;
                 for (let n = start; n < end; n++) {
                     openIssueCounts[dates[n]][bucket] += 1;
                 }
@@ -163,11 +129,11 @@ class Burndown extends Component {
 
         // Count closed issue deltas for entire project
         issues.forEach(issue => {
-            let { closed_at } = issue.githubIssue;
-            if (!closed_at) {
+            let { closedAt } = issue;
+            if (!closedAt) {
                 return;
             }
-            let closedDate = dateFormat(closed_at, 'yyyy-mm-dd');
+            let closedDate = dateFormat(closedAt, 'yyyy-mm-dd');
             closedIssueDeltas[closedDate] += 1;
         });
 
@@ -245,7 +211,7 @@ class Burndown extends Component {
 
         return (
             <div className="Burndown raised-box">
-                <h3>{ this.state.labels.join(' ') }</h3>
+                <h3>{ this.props.query.labels.join(' ') }</h3>
                 <Line data={ data } options={ options }/>
             </div>
         );
