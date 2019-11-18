@@ -107,7 +107,7 @@ class SummaryRow extends Component {
 
     getAssigneesFilter(issues) {
         console.log(issues);
-        let filter = [...new Set(issues.map(issue => issue.assignees.map(assignee => assignee.login))
+        let filter = [...new Set(issues.map(issue => issue.assignees)
             .reduce((a, b) => a.concat(b), []))]
             .map(assignee => `assignee:${assignee}`)
             .join('+');
@@ -138,7 +138,10 @@ class SummaryRow extends Component {
             q = q.filter(item => item !== 'assignee:*')
             advanced = true;
         }
-        q = q.concat(labels.map(label => `label:${label}`));
+        if (labels) {
+            // FIXME: Links won't work for epics :(
+            q = q.concat(labels.map(label => `label:${label}`));
+        }
 
         let queryString = q.join('+');
 
@@ -312,6 +315,19 @@ class SummaryRow extends Component {
     }
 }
 
+const title = query => {
+
+    if (query.epics) {
+        return query.epics.join(' ');
+    }
+    else if (query.labels) {
+        return query.labels.join(' ');
+    }
+
+    return 'Untitled.';
+
+};
+
 class Summary extends Component {
 
     calculatePercentCompleted(feature) {
@@ -348,7 +364,7 @@ class Summary extends Component {
         return (
             <div className="Summary raised-box">
                 <div className="Summary-Header">
-                    <div className="Label">{ feature.labels.join(' ') }</div>
+                    <div className="Label">{ title(this.props.query) }</div>
                     <div className="PercentComplete">{ this.calculatePercentCompleted(feature) }%</div>
                 </div>
                 <div className="Summary-Table">

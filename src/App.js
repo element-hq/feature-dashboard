@@ -25,7 +25,6 @@ import Fail from './components/Fail';
 import Plan from './components/Plan';
 import Summary from './components/Summary';
 import Burndown from './components/Burndown';
-import Epic from './components/Epic';
 
 import './feature-dashboard.css';
 
@@ -42,11 +41,20 @@ function getToken() {
 
 class FeatureDashboard {
     static async getIssues(token, query) {
-        return await Github.getIssues(
-            token,
-            query.labels,
-            query.repos
-        );
+        if(query.epics) {
+            return await Github.getEpics(
+                token,
+                query.epics,
+                query.repos
+            );
+        }
+        else {
+            return await Github.getIssues(
+                token,
+                query.labels,
+                query.repos
+            );
+        }
     }
 }
 
@@ -88,12 +96,7 @@ class App extends Component {
                 path: "/burndown",
                 label: "Burndown",
                 component: Burndown,
-            },
-            {
-                path: "/epic",
-                label: "Epic",
-                component: Epic,
-            },
+            }
         ];
     }
 

@@ -37,6 +37,19 @@ const LINE_COLORS = [
     'rgba(40, 0, 40, 0.5)',
 ];
 
+const title = query => {
+
+    if (query.epics) {
+        return query.epics.join(' ');
+    }
+    else if (query.labels) {
+        return query.labels.join(' ');
+    }
+
+    return 'Untitled.';
+
+}
+
 class Burndown extends Component {
 
     render() {
@@ -211,7 +224,7 @@ class Burndown extends Component {
 
         return (
             <div className="Burndown raised-box">
-                <h3>{ this.props.query.labels.join(' ') }</h3>
+                <h3>{ title(this.props.query) }</h3>
                 <Line data={ data } options={ options }/>
             </div>
         );

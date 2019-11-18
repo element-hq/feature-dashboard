@@ -18,11 +18,40 @@ import React, { Component } from 'react';
 import IssueTree from './IssueTree'
 
 
+const title = query => {
+
+    if (query.epics) {
+        return query.epics.join(' ');
+    }
+    else if (query.labels) {
+        return query.labels.join(' ');
+    }
+
+    return 'Untitled.';
+
+};
+
 class Plan extends Component {
 
     render() {
-        let categories = [
-            {
+        const { query } = this.props;
+        let categories = [];
+        if (query.epics) {
+            categories.push({
+                label: issue => {
+                    return issue.story.title;
+                },
+                sort: (a, b) => {
+                    return Number(a.split(":")[1]) - Number(b.split(":")[1]);
+                },
+                unbucketed: 'unstoried'
+            });
+        }
+        if ([].concat(...this.props.issues
+                .map(issue => issue.labels)
+            )
+            .some(label => label.startsWith('phase:'))){
+            categories.push({
                 label: issue => {
                     let phases = issue.labels.filter(label => label.startsWith('phase:'));
                     if (phases.length > 0) {
@@ -34,8 +63,8 @@ class Plan extends Component {
                     return Number(a.split(":")[1]) - Number(b.split(":")[1]);
                 },
                 unbucketed: 'unphased'
-            }
-        ];
+            });
+        }
         if (this.props.query &&
             this.props.query.repos.length > 1) {
             categories.push({
@@ -78,7 +107,7 @@ class Plan extends Component {
 
         return (
             <div className="Plan raised-box">
-                <p className="query-labels">{ this.props.query.labels.join(' ') }</p>
+                <p className="title">{ title(this.props.query) }</p>
                 <IssueTree
                     categories={ categories }
                     items={ this.props.issues }
