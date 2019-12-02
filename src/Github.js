@@ -57,7 +57,6 @@ class Github {
             }
             issues = issues.concat(storyIssues);
         }
-        console.log('issues', issues);
         return issues;
     }
 
@@ -119,6 +118,60 @@ class Github {
                                 assignees(first: 100) {
                                     edges {
                                         node {
+                                            login
+                                        }
+                                    }
+                                }
+                                repository {
+                                    owner {
+                                        login
+                                    }
+                                    name
+                                }
+                                labels(first: 100) {
+                                    edges {
+                                        node {
+                                            name
+                                        }
+                                    }
+                                }
+                                userContentEdits(first: 100) {
+                                    edges {
+                                        node {
+                                            editedAt
+                                            diff
+                                        }
+                                    }
+                                }
+                                timelineItems(last: 1, itemTypes: [ASSIGNED_EVENT]) {
+                                    edges {
+                                        node {
+                                            ...on AssignedEvent {
+                                                actor {
+                                                    login
+                                                }
+                                                createdAt
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    pullRequests(first: 100, labels: $labels) {
+                        edges {
+                            cursor
+                            node {
+                                number
+                                title
+                                body
+                                url
+                                state
+                                createdAt
+                                closedAt
+                                assignees(first: 100) {
+                                    edges {
+                                        node {
                                             name
                                         }
                                     }
@@ -144,6 +197,18 @@ class Github {
                                         }
                                     }
                                 }
+                                timelineItems(last: 1, itemTypes: [ASSIGNED_EVENT]) {
+                                    edges {
+                                        node {
+                                            ...on AssignedEvent {
+                                                actor {
+                                                    login
+                                                }
+                                                createdAt
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -160,9 +225,13 @@ class Github {
                 project: project,
                 labels: labels
             });
-            issues = issues.concat(results.repository.issues.edges.map(
-                issue => Issue.fromGraphql(issue.node)));
+            let resultIssues = results.repository.issues.edges.map(
+                issue => Issue.fromGraphql(issue.node));
+            let resultPullRequests = results.repository.pullRequests.edges.map(
+                pullRequest => Issue.fromGraphql(pullRequest.node));
+            issues = issues.concat(resultIssues).concat(resultPullRequests);
         }
+        console.log(issues);
         return issues;
     }
 
@@ -212,7 +281,16 @@ class Issue {
     static fromGraphql(graphqlIssue) {
         const labels = graphqlIssue.labels.edges.map(x => x.node.name);
         const assigned = graphqlIssue.assignees.edges.length > 0;
-        const assignees = graphqlIssue.assignees.edges.map(assignee => assignee.login);
+        const assignees = graphqlIssue.assignees.edges.map(assignee => assignee.node.login);
+        const inProgressSince = graphqlIssue.timelineItems.edges.length > 0 ?
+            graphqlIssue.timelineItems.edges[0].node.createdAt.slice(0,10) : null;
+
+        const subTasks = graphqlIssue.body.split('\n')
+            .map(line => line.trim())
+            .filter(line => line.startsWith('- ['));
+
+        const done = subTasks.filter(line => line.toUpperCase().startsWith('- [X] ')).length;
+        const pending = subTasks.filter(line => line.toUpperCase().startsWith('- [ ] ')).length;
         return {
             origin: 'graphql',
             source: graphqlIssue,
@@ -227,7 +305,9 @@ class Issue {
             assigned: assigned,
             assignees: assignees,
             createdAt: graphqlIssue.createdAt,
-            closedAt: graphqlIssue.closedAt
+            closedAt: graphqlIssue.closedAt,
+            inProgressSince: inProgressSince,
+            progress: pending ? `${done} / ${done + pending}` : null
         }
     }
 
@@ -248,7 +328,7 @@ class Issue {
     }
 
     static getState(githubState, assigned) {
-        if (githubState.toUpperCase() === 'CLOSED') {
+        if (['CLOSED', 'MERGED'].includes(githubState.toUpperCase())) {
             return 'done';
         }
         else if (assigned) {
