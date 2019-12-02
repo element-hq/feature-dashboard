@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import React, { Component } from 'react';
+import moment from 'moment';
 import IssueTree from './IssueTree'
 
 
@@ -90,7 +91,8 @@ class Plan extends Component {
                 <li className={`task ${issue.state}`} key={ issue.number }>
                     <a href={ issue.url } target="_blank" rel="noopener noreferrer" >{ `${issue.number} ${issue.title}` }</a>
                     <span className={ 'state ' + issue.state }>
-                        { issue.state === 'done' ? ' (done)' : issue.state === 'wip' ? ' (in progress)' : '' }
+                            { issue.state === 'done' ? ' (done)' : 
+                              issue.state === 'wip' ? ` (${issue.assignees[0]} started ${moment(issue.inProgressSince).fromNow()}${issue.progress ? ': ' + issue.progress + ' complete': ''})` : '' }
                     </span>
                     { renderLabel(issue, 'blocked') }
                 </li>
