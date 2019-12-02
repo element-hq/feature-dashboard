@@ -106,7 +106,6 @@ class SummaryRow extends Component {
     }
 
     getAssigneesFilter(issues) {
-        console.log(issues);
         let filter = [...new Set(issues.map(issue => issue.assignees)
             .reduce((a, b) => a.concat(b), []))]
             .map(assignee => `assignee:${assignee}`)
