@@ -61,7 +61,8 @@ class Github {
              * minimum-expected number of stories to represent on the plan even if those stories
              * aren't planned yet.
              * */
-            if (userStory.getNumberedLabelValue('size:vector-im/riot-web') > storyIssues.length) {
+            const minStories = userStory.getNumberedLabelValue('size:vector-im/riot-web') || 1;
+            if (minStories > storyIssues.length) {
                 let imaginaryIssue = {
                     owner: 'vector-im',
                     repo: 'riot-web',
@@ -74,11 +75,14 @@ class Github {
                     createdAt: userStory.createdAt,
                     origin: 'placeholder'
                 }
-                for (let i = 0; i < userStory.getNumberedLabelValue('size:vector-im/riot-web') - storyIssues.length; i++) {
+                for (let i = 0; i < minStories - storyIssues.length; i++) {
                     issues.push(imaginaryIssue);
                 }
             }
         }
+        let milestoneNumber = milestone.split('/').pop();
+        let unstoriedIssues = await this.getFullIssues(token, [`epic:${milestoneNumber}`], repos);
+        issues = issues.concat(unstoriedIssues);
         return issues;
     }
 
@@ -276,6 +280,7 @@ class Github {
                 }
             }`
         let issues = [];
+        // await Promise.all([]);
         for (const repo of searchRepos) {
             let [owner, project] = repo.split('/');
             let results = await graphql(query, {

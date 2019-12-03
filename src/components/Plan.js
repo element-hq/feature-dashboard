@@ -39,7 +39,8 @@ class Plan extends Component {
         let categories = [];
         if (query.epics) {
             categories.push(issues => {
-                let storyNumbers = [...new Set(issues.map(issue => issue.story.number))];
+                let storyNumbers = [...new Set(issues.filter(issue => issue.story)
+                    .map(issue => issue.story.number))];
                 let categorized = [];
 
                 for (const storyNumber of storyNumbers) {
@@ -52,9 +53,18 @@ class Plan extends Component {
                                rel="noopener noreferrer" 
                                href={ story.url }> {story.number} { story.title } </a>
                         ),
-                        items: issues.filter(issue => issue.story.number === story.number)
+                        items: issues.filter(issue => issue.story && issue.story.number === story.number)
                     });
                 }
+                let unstoried = issues.filter(issue => !issue.story);
+                if (unstoried.length > 0) {
+                    categorized.push({
+                        key: -1,
+                        heading: 'Issues not associated with a story',
+                        items: unstoried
+                    });
+                }
+
                 return categorized;
             });
         }
