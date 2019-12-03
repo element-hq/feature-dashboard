@@ -37,7 +37,7 @@ class IssueTree extends Component {
         return (
             categorized.map(bucket => {
                 return (
-                    <ul key={ bucket }>
+                    <ul key={ bucket.key }>
                         <li className="heading">{ bucket.heading }
                             <IssueTree
                                 categories={ categories.slice(1) }

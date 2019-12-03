@@ -44,8 +44,8 @@ class Plan extends Component {
 
                 for (const storyNumber of storyNumbers) {
                     let story = issues.find(issue => issue.story.number === storyNumber).story;
-                    console.log('key', story.number);
                     categorized.push({
+                        key: story.number,
                         heading: (
                             <a key={ story.number }
                                target="_blank"
@@ -68,11 +68,13 @@ class Plan extends Component {
                 let categorized = [];
                 for (const phase of phases) {
                     categorized.push({
+                        key: phase,
                         heading: `phase:${phase}`,
                         items: issues.filter(issue => issue.getNumberedLabelValue('phase') === phase)
                     });
                 }
                 categorized.push({
+                    key: -1,
                     heading: 'unphased',
                     items: issues.filter(issue => issue.getNumberedLabelValue('phase') === null)
                 });
@@ -92,6 +94,7 @@ class Plan extends Component {
                 let categorized = [];
                 for (const repo of repos) {
                     categorized.push({
+                        key: repo,
                         heading: repo,
                         items: issues.filter(issue => `${issue.owner}/${issue.repo}` === repo)
                     });
