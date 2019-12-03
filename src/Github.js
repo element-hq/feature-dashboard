@@ -29,25 +29,35 @@ class Github {
         const milestone = milestones[0];
         const epicMilestone = await this.getMilestone(token, milestone);
         let issues = [];
+        let epic = [];
         for (const userStory of epicMilestone) {
             let label = `story:${userStory.number}`;
-            let storyIssues = await this.getFullIssues(token, [label], repos);
-            for (var storyIssue of storyIssues) {
-                storyIssue.story = userStory;
+            epic.push({
+                story: userStory,
+                relatedIssues: this.getFullIssues(token, [label], repos)
+            });
+        }
+        Promise.all(epic.map(userStory => userStory.issues));
+
+        for (const userStory of epic) {
+            userStory.relatedIssues = await userStory.relatedIssues;
+
+            for (const issue of userStory.relatedIssues) {
+                issue.story = userStory.story;
             }
-            issues = issues.concat(storyIssues);
+            issues = issues.concat(userStory.relatedIssues);
 
             /* All of this business is in support of a PoC for a special label format,
              * size:<owner>/<repo>:<estimate number of stories>, which allows the planner to set a
              * minimum-expected number of stories to represent on the plan even if those stories
              * aren't planned yet.
              * */
-            const minStories = userStory.getNumberedLabelValue('size:vector-im/riot-web') || 1;
-            if (minStories > storyIssues.length) {
+            const minStories = userStory.story.getNumberedLabelValue('size:vector-im/riot-web') || 1;
+            if (minStories > userStory.relatedIssues.length) {
                 let imaginaryIssue = {
                     owner: 'vector-im',
                     repo: 'riot-web',
-                    story: userStory,
+                    story: userStory.story,
                     number: -1,
                     state: 'todo',
                     title: 'NOT YET PLANNED',
@@ -56,7 +66,7 @@ class Github {
                     createdAt: userStory.createdAt,
                     origin: 'placeholder'
                 }
-                for (let i = 0; i < minStories - storyIssues.length; i++) {
+                for (let i = 0; i < minStories - userStory.relatedIssues.length; i++) {
                     issues.push(imaginaryIssue);
                 }
             }
@@ -267,9 +277,9 @@ class Github {
             }`
         let issues = [];
         // await Promise.all([]);
-        for (const repo of searchRepos) {
+        let resultSets = searchRepos.map(repo => {
             let [owner, project] = repo.split('/');
-            let results = await graphql(query, {
+            return graphql(query, {
                 headers: {
                     authorization: `token ${token}`
                 },
@@ -277,6 +287,10 @@ class Github {
                 project: project,
                 labels: labels
             });
+        });
+        Promise.all(resultSets);
+        for (const resultSet of resultSets) {
+            let results = await resultSet;
             let resultIssues = results.repository.issues.edges.map(
                 issue => Issue.fromGraphql(issue.node));
             let resultPullRequests = results.repository.pullRequests.edges.map(
