@@ -70,6 +70,7 @@ class Github {
                     state: 'todo',
                     title: 'NOT YET PLANNED',
                     labels: [],
+                    type: 'issues',
                     origin: 'placeholder'
                 }
                 for (let i = 0; i < userStory.getNumberedLabelValue('size:vector-im/riot-web') - storyIssues.length; i++) {
