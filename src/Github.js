@@ -52,7 +52,7 @@ class Github {
              * minimum-expected number of stories to represent on the plan even if those stories
              * aren't planned yet.
              * */
-            const minStories = userStory.story.getNumberedLabelValue('size:vector-im/riot-web') || 1;
+            const minStories = userStory.story.getNumberedLabelValue('size:vector-im/riot-web') || 0;
             if (minStories > userStory.relatedIssues.length) {
                 let imaginaryIssue = {
                     owner: 'vector-im',

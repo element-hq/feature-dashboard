@@ -39,21 +39,18 @@ class Plan extends Component {
         let categories = [];
         if (query.epics) {
             categories.push(issues => {
-                let storyNumbers = [...new Set(issues.filter(issue => issue.story)
-                    .map(issue => issue.story.number))];
                 let categorized = [];
 
-                for (const storyNumber of storyNumbers) {
-                    let story = issues.find(issue => issue.story.number === storyNumber).story;
+                for (const userStory of this.props.meta.userStories) {
                     categorized.push({
-                        key: story.number,
+                        key: userStory.number,
                         heading: (
-                            <a key={ story.number }
+                            <a key={ userStory.number }
                                target="_blank"
                                rel="noopener noreferrer" 
-                               href={ story.url }> {story.number} { story.title } </a>
+                               href={ userStory.url }> User Story: {userStory.number} { userStory.title } </a>
                         ),
-                        items: issues.filter(issue => issue.story && issue.story.number === story.number)
+                        items: issues.filter(issue => issue.story && issue.story.number === userStory.number)
                     });
                 }
                 let unstoried = issues.filter(issue => !issue.story);
