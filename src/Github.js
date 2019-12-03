@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 import Octokit from '@octokit/rest';
 import graphql from '@octokit/graphql';
 
@@ -66,12 +65,57 @@ class Github {
                 repository(owner: $owner, name: $project) {
                     milestone(number: $number) {
                         title
-                        issues(first:100) {
+                        issues(first: 100) {
                             edges {
                                 cursor
                                 node {
-                                    title
                                     number
+                                    title
+                                    body
+                                    url
+                                    state
+                                    createdAt
+                                    closedAt
+                                    assignees(first: 100) {
+                                        edges {
+                                            node {
+                                                login
+                                            }
+                                        }
+                                    }
+                                    repository {
+                                        owner {
+                                            login
+                                        }
+                                        name
+                                    }
+                                    labels(first: 100) {
+                                        edges {
+                                            node {
+                                                name
+                                            }
+                                        }
+                                    }
+                                    userContentEdits(first: 100) {
+                                        edges {
+                                            node {
+                                                editedAt
+                                                diff
+                                            }
+                                        }
+                                    }
+                                    timelineItems(last: 1, itemTypes: [ASSIGNED_EVENT]) {
+                                        edges {
+                                            node {
+                                                ...on AssignedEvent {
+                                                    actor {
+                                                        login
+                                                    }
+                                                    createdAt
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -90,13 +134,7 @@ class Github {
         });
 
         const stories = results.repository.milestone.issues.edges.map(result =>
-            {
-                return {
-                    number: result.node.number,
-                    title: result.node.title
-                };
-            });
-                    ;
+            Issue.fromGraphql(result.node));
         return stories;
     }
 
@@ -231,7 +269,6 @@ class Github {
                 pullRequest => Issue.fromGraphql(pullRequest.node));
             issues = issues.concat(resultIssues).concat(resultPullRequests);
         }
-        console.log(issues);
         return issues;
     }
 
@@ -274,7 +311,14 @@ class Issue {
             assigned: assigned,
             assignees: assignees,
             createdAt: octokitIssue.created_at,
-            closedAt: octokitIssue.closed_at
+            closedAt: octokitIssue.closed_at,
+            getNumberedLabelValue: function(labelPrefix) {
+                let matches = this.labels.filter(label => label.startsWith(`${labelPrefix}:`));
+                if (matches.length > 0) {
+                    return Number(matches[0].split(':')[1]);
+                }
+                else return null;
+            }
         }
     }
 
@@ -307,7 +351,14 @@ class Issue {
             createdAt: graphqlIssue.createdAt,
             closedAt: graphqlIssue.closedAt,
             inProgressSince: inProgressSince,
-            progress: pending ? `${done} / ${done + pending}` : null
+            progress: pending ? `${done} / ${done + pending}` : null,
+            getNumberedLabelValue: function(labelPrefix) {
+                let matches = this.labels.filter(label => label.startsWith(`${labelPrefix}:`));
+                if (matches.length > 0) {
+                    return Number(matches[0].split(':')[1]);
+                }
+                else return null;
+            }
         }
     }
 
