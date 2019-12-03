@@ -55,6 +55,27 @@ class Github {
                 storyIssue.story = userStory;
             }
             issues = issues.concat(storyIssues);
+
+            /* All of this business is in support of a PoC for a special label format,
+             * size:<owner>/<repo>:<estimate number of stories>, which allows the planner to set a
+             * minimum-expected number of stories to represent on the plan even if those stories
+             * aren't planned yet.
+             * */
+            if (userStory.getNumberedLabelValue('size:vector-im/riot-web') > storyIssues.length) {
+                let imaginaryIssue = {
+                    owner: 'vector-im',
+                    repo: 'riot-web',
+                    story: userStory,
+                    number: -1,
+                    state: 'todo',
+                    title: 'NOT YET PLANNED',
+                    labels: [],
+                    origin: 'placeholder'
+                }
+                for (let i = 0; i < userStory.getNumberedLabelValue('size:vector-im/riot-web') - storyIssues.length; i++) {
+                    issues.push(imaginaryIssue);
+                }
+            }
         }
         return issues;
     }
@@ -315,7 +336,7 @@ class Issue {
             getNumberedLabelValue: function(labelPrefix) {
                 let matches = this.labels.filter(label => label.startsWith(`${labelPrefix}:`));
                 if (matches.length > 0) {
-                    return Number(matches[0].split(':')[1]);
+                    return Number(matches[0].split(':').pop());
                 }
                 else return null;
             }
@@ -355,7 +376,7 @@ class Issue {
             getNumberedLabelValue: function(labelPrefix) {
                 let matches = this.labels.filter(label => label.startsWith(`${labelPrefix}:`));
                 if (matches.length > 0) {
-                    return Number(matches[0].split(':')[1]);
+                    return Number(matches[0].split(':').pop());
                 }
                 else return null;
             }

@@ -50,7 +50,7 @@ class Plan extends Component {
                             <a key={ story.number }
                                target="_blank"
                                rel="noopener noreferrer" 
-                               href={ story.url }> { story.title } </a>
+                               href={ story.url }> {story.number} { story.title } </a>
                         ),
                         items: issues.filter(issue => issue.story.number === story.number)
                     });
