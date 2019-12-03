@@ -38,44 +38,66 @@ class Plan extends Component {
         const { query } = this.props;
         let categories = [];
         if (query.epics) {
-            categories.push({
-                label: issue => {
-                    return issue.story.title;
-                },
-                sort: (a, b) => {
-                    return Number(a.split(":")[1]) - Number(b.split(":")[1]);
-                },
-                unbucketed: 'unstoried'
+            categories.push(issues => {
+                let storyNumbers = [...new Set(issues.map(issue => issue.story.number))];
+                let categorized = [];
+
+                for (const storyNumber of storyNumbers) {
+                    let story = issues.find(issue => issue.story.number === storyNumber).story;
+                    console.log('key', story.number);
+                    categorized.push({
+                        heading: (
+                            <a key={ story.number }
+                               target="_blank"
+                               rel="noopener noreferrer" 
+                               href={ story.url }> { story.title } </a>
+                        ),
+                        items: issues.filter(issue => issue.story.number === story.number)
+                    });
+                }
+                return categorized;
             });
         }
         if ([].concat(...this.props.issues
                 .map(issue => issue.labels)
             )
-            .some(label => label.startsWith('phase:'))){
-            categories.push({
-                label: issue => {
-                    let phases = issue.labels.filter(label => label.startsWith('phase:'));
-                    if (phases.length > 0) {
-                        return phases[0];
-                    }
-                    else return null;
-                },
-                sort: (a, b) => {
-                    return Number(a.split(":")[1]) - Number(b.split(":")[1]);
-                },
-                unbucketed: 'unphased'
+            .some(label => label.startsWith('phase:'))) {
+            categories.push(issues => {
+                let phases = issues.map(issue => issue.getNumberedLabelValue('phase')).sort();
+
+                let categorized = [];
+                for (const phase of phases) {
+                    categorized.push({
+                        heading: `phase:${phase}`,
+                        items: issues.filter(issue => issue.getNumberedLabelValue('phase') === phase)
+                    });
+                }
+                categorized.push({
+                    heading: 'unphased',
+                    items: issues.filter(issue => issue.getNumberedLabelValue('phase') === null)
+                });
             });
         }
         if (this.props.query &&
             this.props.query.repos.length > 1) {
-            categories.push({
-                label: issue => issue.owner + '/' + issue.repo,
-                sort: (a, b) => {
-                    // Preserve repo ordering as entered by user
-                    const ai = this.props.query.repos.indexOf(a);
-                    const bi = this.props.query.repos.indexOf(b);
-                    return ai - bi;
-                },
+            categories.push(issues => {
+                let repos = [...new Set(issues.map(issue => `${issue.owner}/${issue.repo}`))]
+                    .sort((repoA, repoB) => {
+                        return this.props.query.repos
+                                .indexOf(repoA)
+                               - this.props.query.repos
+                                .indexOf(repoB);
+                    });
+
+                let categorized = [];
+                for (const repo of repos) {
+                    categorized.push({
+                        heading: repo,
+                        items: issues.filter(issue => `${issue.owner}/${issue.repo}` === repo)
+                    });
+                }
+
+                return categorized;
             });
         }
         let renderLabel = (issue, label) => {

@@ -31,45 +31,23 @@ class IssueTree extends Component {
             );
         }
 
-        let { label, sort, unbucketed } = categories[0];
-
-        let headings = [...new Set(items.filter(label).map(label))].sort(sort);
-
-        let buckets = {};
-        headings.forEach(heading => {
-            buckets[heading] = items.filter(item => label(item) === heading);
-        });
-
-        // If we're interested in issues that weren't matched by the filter,
-        // throw them into an 'unbucketed' category.
-        if (unbucketed) {
-            let unbucketedItems = items.filter(item =>
-                !Object.values(buckets).reduce((array, value) => {
-                    return array.concat(value);
-                }, []).includes(item));
-
-            if (unbucketedItems.length > 0) {
-                buckets[unbucketed] = unbucketedItems;
-            }
-        }
+        let categorize = categories[0];
+        let categorized = categorize(items);
 
         return (
-            Object.keys(buckets).map(bucket => {
-                if (buckets[bucket].length > 0) {
-                    return (
-                        <ul key={ bucket }>
-                            <li className="heading">{ bucket }
-                                <IssueTree
-                                    categories={ categories.slice(1) }
-                                    items={ buckets[bucket] }
-                                    renderItem={ renderItem }
-                                    sortItems={ this.props.sortItems }
-                                />
-                            </li>
-                        </ul>
-                    )
-                }
-                else return null;
+            categorized.map(bucket => {
+                return (
+                    <ul key={ bucket }>
+                        <li className="heading">{ bucket.heading }
+                            <IssueTree
+                                categories={ categories.slice(1) }
+                                items={ bucket.items }
+                                renderItem={ renderItem }
+                                sortItems={ this.props.sortItems }
+                            />
+                        </li>
+                    </ul>
+                )
             })
         );
     }
