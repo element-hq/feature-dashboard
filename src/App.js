@@ -68,15 +68,18 @@ class App extends Component {
                 repos: [],
                 labels: []
             },
-            issues: []
+            issues: [],
+            meta: {}
         }
     }
 
     async componentDidMount() {
         let query = this.parseQueryFromHash(window.location.hash);
+        let results = await FeatureDashboard.getIssues(getToken(), query)
         this.setState({
             query: this.parseQueryFromHash(window.location.hash),
-            issues: await FeatureDashboard.getIssues(getToken(), query)
+            issues: results.issues,
+            meta: results.meta
         });
     }
 
@@ -157,6 +160,7 @@ class App extends Component {
                                     {...props}
                                     query={this.state.query}
                                     issues={this.state.issues}
+                                    meta={this.state.meta}
                                 />}
                             />
                         ))}

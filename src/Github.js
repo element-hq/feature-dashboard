@@ -64,7 +64,12 @@ class Github {
         let milestoneNumber = milestone.split('/').pop();
         let unstoriedIssues = await this.getFullIssues(token, [`epic:${milestoneNumber}`], repos);
         issues = issues.concat(unstoriedIssues);
-        return issues;
+        return {
+            issues: issues,
+            meta: {
+                userStories: epicMilestone
+            }
+        }
     }
 
     static async getMilestone(token, milestone) {
@@ -292,7 +297,10 @@ class Github {
 
         let githubIssues = await octokit.paginate(options);
 
-        return githubIssues.map(issue => Issue.fromOctokit(issue));
+        return {
+            issues: githubIssues.map(issue => Issue.fromOctokit(issue)),
+            meta: {}
+        }
     }
 
 }
