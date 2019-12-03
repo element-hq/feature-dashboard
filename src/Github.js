@@ -24,25 +24,6 @@ class Github {
         });
     }
 
-    static async getTaskCount(token, issue) {
-        let octokit = this.getOcotokit(token);
-        let options = octokit.issues.listComments.endpoint.merge({
-            owner: issue.owner,
-            repo: issue.repo,
-            number: issue.number
-        });
-        let comments = await octokit.paginate(options);
-        comments = comments.map(comment => comment.body);
-        comments.unshift(issue.body);
-        comments = comments.join("\n").split(/\r?\n/)
-        let completed = comments.filter(comment => comment.trim().toLowerCase().startsWith('- [x]')).length;
-        let outstanding = comments.filter(comment => comment.trim().startsWith('- [ ]')).length;
-        return {
-            completed: completed,
-            outstanding: outstanding
-        }
-    }
-
     static async getEpics(token, milestones, repos) {
         // Only the first milestone for now
         const milestone = milestones[0];
