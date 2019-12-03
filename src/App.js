@@ -41,19 +41,26 @@ function getToken() {
 
 class FeatureDashboard {
     static async getIssues(token, query) {
-        if(query.epics) {
-            return await Github.getEpics(
-                token,
-                query.epics,
-                query.repos
-            );
+        try {
+            if(query.epics) {
+                return await Github.getEpics(
+                    token,
+                    query.epics,
+                    query.repos
+                );
+            }
+            else {
+                return await Github.getIssues(
+                    token,
+                    query.labels,
+                    query.repos
+                );
+            }
         }
-        else {
-            return await Github.getIssues(
-                token,
-                query.labels,
-                query.repos
-            );
+        catch (e) {
+            console.log('error', e);
+            alert(e);
+            throw e;
         }
     }
 }
