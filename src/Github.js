@@ -71,6 +71,7 @@ class Github {
                     title: 'NOT YET PLANNED',
                     labels: [],
                     type: 'issues',
+                    createdAt: userStory.createdAt,
                     origin: 'placeholder'
                 }
                 for (let i = 0; i < userStory.getNumberedLabelValue('size:vector-im/riot-web') - storyIssues.length; i++) {
