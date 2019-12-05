@@ -141,7 +141,7 @@ class Plan extends Component {
 
         return (
             <div className="Plan raised-box">
-                <p className="title">{ title(this.props.query) }</p>
+                <p className="title">{ this.props.meta.milestoneTitle || title(this.props.query) }</p>
                 <IssueTree
                     categories={ categories }
                     items={ this.props.issues }

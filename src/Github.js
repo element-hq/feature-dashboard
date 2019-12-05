@@ -30,7 +30,7 @@ class Github {
         const epicMilestone = await this.getMilestone(token, milestone);
         let issues = [];
         let epic = [];
-        for (const userStory of epicMilestone) {
+        for (const userStory of epicMilestone.stories) {
             let label = `story:${userStory.number}`;
             epic.push({
                 story: userStory,
@@ -63,7 +63,7 @@ class Github {
                     title: 'NOT YET PLANNED',
                     labels: [],
                     type: 'issues',
-                    createdAt: userStory.createdAt,
+                    createdAt: userStory.story.createdAt,
                     origin: 'placeholder'
                 }
                 for (let i = 0; i < minStories - userStory.relatedIssues.length; i++) {
@@ -77,7 +77,8 @@ class Github {
         return {
             issues: issues,
             meta: {
-                userStories: epicMilestone
+                userStories: epicMilestone.stories,
+                milestoneTitle: epicMilestone.title
             }
         }
     }
@@ -158,7 +159,11 @@ class Github {
 
         const stories = results.repository.milestone.issues.edges.map(result =>
             Issue.fromGraphql(result.node));
-        return stories;
+
+        return {
+            title: results.repository.milestone.title,
+            stories: stories
+        }
     }
 
     static async getFullIssues(token, labels, searchRepos) {
