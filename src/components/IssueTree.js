@@ -25,7 +25,7 @@ class IssueTree extends Component {
 
         if (categories.length === 0) {
             return (
-                <ul>
+                <ul className="issues">
                     { items.sort(this.props.sortItems).map(item => renderItem(item)) }
                 </ul>
             );
@@ -37,7 +37,7 @@ class IssueTree extends Component {
         return (
             categorized.map(bucket => {
                 return (
-                    <ul key={ bucket.key }>
+                    <ul key={ bucket.key } className={ bucket.class }>
                         <li className="heading">{ bucket.heading }
                             <IssueTree
                                 categories={ categories.slice(1) }
