@@ -384,7 +384,10 @@ class Issue {
             createdAt: graphqlIssue.createdAt,
             closedAt: graphqlIssue.closedAt,
             inProgressSince: inProgressSince,
-            progress: pending ? `${done} / ${done + pending}` : null,
+            progress: pending ? {
+                done: done,
+                total: done + pending
+            } : null,
             getNumberedLabelValue: function(labelPrefix) {
                 let matches = this.labels.filter(label => label.startsWith(`${labelPrefix}:`));
                 if (matches.length > 0) {
