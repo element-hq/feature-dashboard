@@ -187,27 +187,6 @@ body {
     top: -20px;
 }
 
-.TokenInput {
-    text-transform: uppercase;
-    font-size: 8px;
-    float: right;
-    cursor: pointer;
-    margin-top: 6px;
-}
-
-.TokenInput.invalid-credentials {
-    color: red;
-}
-
-.TokenInput.unauthenticated {
-    color: lightgrey;
-}
-
-.TokenInput.authenticated {
-    color: green;
-    opacity: 0.3;
-}
-
 nav {
     width: min-content;
     font-size: 12px;

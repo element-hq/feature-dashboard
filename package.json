@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "license": "Apache-2.0",
   "private": true,
-  "homepage": "https://vector-im.github.io/feature-dashboard",
+  "homepage": "http://localhost/",
   "dependencies": {
     "@octokit/graphql": "^2.1.1",
     "@octokit/rest": "^16.16.3",

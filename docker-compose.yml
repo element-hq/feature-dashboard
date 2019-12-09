@@ -1,0 +1,15 @@
+version: "2"
+services:
+    auth:
+        image: lampholder/github-auth:v0.1.0
+        env_file:
+            - config.env
+            - secrets.env
+        ports:
+            - "5000"
+    dashboard:
+        build: .
+        ports:
+            - "8080:80"
+        depends_on:
+            - auth

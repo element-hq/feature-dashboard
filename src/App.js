@@ -27,6 +27,17 @@ import Burndown from './components/Burndown';
 
 import './feature-dashboard.css';
 
+function getToken() {
+    const GITHUB_TOKEN = 'github_token';
+    var cookies = document.cookie.match('(^|[^;]+)\\s*' + GITHUB_TOKEN + '\\s*=\\s*([^;]+)');
+    if (cookies) {
+        return cookies.pop();
+    }
+    else {
+        window.location = '/_auth/login?target_url=' + encodeURIComponent(window.location);
+    }
+}
+
 class App extends Component {
 
     constructor(props) {
@@ -41,6 +52,8 @@ class App extends Component {
     }
 
     async componentDidMount() {
+        const token = getToken();
+
         /*
          * FIXME: This _looks_ wrong. Why are we fiddling around parsing the location.hash
          * when we've got a perfectly good HashRouter to do that for us?
@@ -48,7 +61,6 @@ class App extends Component {
         if (window.location.hash.includes("?")) {
             const query = this.parseQueryFromHash(window.location.hash);
 
-            let token = localStorage.getItem('github_token');
             let connection = await Github.getConnection(token);
             this.setState({connectionStatus: connection.status });
 
