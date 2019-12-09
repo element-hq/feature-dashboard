@@ -23,7 +23,6 @@ const title = query => {
 
     if (query.epics) {
         // FIXME: Inconsistent - can we speicify one epic or many?
-        console.log('titling', query.epics[0]);
         return query.epics[0].replace(/^epic:/, '');
     }
     else if (query.labels) {
@@ -167,11 +166,15 @@ class Plan extends Component {
             }
 
             let labels = null;
-            let relevantLabels = issue.labels.filter(x => ['defect', 'regression'].includes(x) || x.startsWith('blocked'));
+            let relevantLabels = issue.labels.filter(x => ['defect', 'regression', 'bug'].includes(x) || x.startsWith('blocked'));
             if(relevantLabels.length > 0) {
                 labels = (
                     <span className="labels">
-                        <span style={{background: '#E34E4E'}}>{ relevantLabels[0] }</span>
+                            {
+                                relevantLabels.map(relevantLabel =>
+                                    <span style={{background: '#E34E4E'}}>{ relevantLabel }</span>
+                                )
+                            }
                     </span>
                 )
             }
@@ -214,10 +217,12 @@ class Plan extends Component {
             }
             return a.number - b.number;
         };
-
         return (
             <div className="plan">
-                <h1>{ this.props.meta.milestoneTitle && this.props.meta.milestoneTitle.replace(/^epic:/, '') || title(this.props.query) }</h1>
+                <h1><a href={ this.props.meta.milestoneUrl }
+                    target="_blank"
+                    rel="noopener noreferrer">
+                { this.props.meta.milestoneTitle && this.props.meta.milestoneTitle.replace(/^epic:/, '') || title(this.props.query) }</a></h1>
                 <IssueTree
                     categories={ categories }
                     items={ this.props.issues }

@@ -235,6 +235,15 @@ body {
     background: #E8E9E9;
 }
 
+.plan h1 a {
+    text-decoration: none;
+    color: black;
+}
+
+.plan h1 a:hover {
+    text-decoration: underline;
+}
+
 .plan ul {
     list-style: none;
     padding: 0px;
@@ -274,6 +283,8 @@ body {
 }
 
 .plan ul.stories>li ul.repos>li .repo {
+    display: inline-block;
+    margin-top: 6px;
     font-size: 14px;
 }
 
@@ -349,7 +360,7 @@ body {
 }
 
 .card.done {
-    opacity: 50%;
+    opacity: 0.3;
 }
 
 .card .card-body {
@@ -389,6 +400,7 @@ body {
     font-size: 11px;
     color: white;
     padding: 3px 4px 3px 4px;
+    margin-left: 4px;
     border-radius: 3px;
 }
 
