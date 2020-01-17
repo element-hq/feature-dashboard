@@ -65,6 +65,7 @@ class Plan extends Component {
                 return categorized;
             });
         }
+        /*
         if ([].concat(...this.props.issues
                 .map(issue => issue.labels)
             )
@@ -85,8 +86,11 @@ class Plan extends Component {
                     heading: 'unphased',
                     items: issues.filter(issue => issue.getNumberedLabelValue('phase') === null)
                 });
+
+                return categorized;
             });
         }
+        */
         if (this.props.query &&
             this.props.query.repos.length > 1) {
             categories.push(issues => {
