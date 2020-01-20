@@ -25,6 +25,16 @@ class Github {
     }
 
     static async getEpics(token, milestones, repos) {
+        if (!repos) {
+            return {
+                issues: [],
+                meta: {
+                    userStories: [],
+                    milestoneTitle: null,
+                }
+            };
+        }
+
         // Only the first milestone for now
         const milestone = milestones[0];
         const epicMilestone = await this.getMilestone(token, milestone);
@@ -303,6 +313,13 @@ class Github {
     }
 
     static async getIssues(token, labels, searchRepos) {
+        if (!searchRepos) {
+            return {
+                issues: [],
+                meta: {},
+            };
+        }
+
         let octokit = this.getOctokit(token);
         let searchString = searchRepos.map(repo => 'repo:' + repo)
             .join(' ') + ' ' + labels.map(label => `label:${label}`).join(' ');

@@ -91,15 +91,11 @@ class Plan extends Component {
             });
         }
         */
-        if (this.props.query &&
-            this.props.query.repos.length > 1) {
+        if (query.repos && query.repos.length > 1) {
             categories.push(issues => {
                 let repos = [...new Set(issues.map(issue => `${issue.owner}/${issue.repo}`))]
                     .sort((repoA, repoB) => {
-                        return this.props.query.repos
-                                .indexOf(repoA)
-                               - this.props.query.repos
-                                .indexOf(repoB);
+                        return query.repos.indexOf(repoA) - query.repos.indexOf(repoB);
                     });
 
                 let categorized = [];
@@ -145,7 +141,7 @@ class Plan extends Component {
 
         return (
             <div className="Plan raised-box">
-                <p className="title">{ this.props.meta.milestoneTitle || title(this.props.query) }</p>
+                <p className="title">{ this.props.meta.milestoneTitle || title(query) }</p>
                 <IssueTree
                     categories={ categories }
                     items={ this.props.issues }
