@@ -37,7 +37,6 @@ class Github {
                 relatedIssues: this.getFullIssues(token, [label], repos)
             });
         }
-        Promise.all(epic.map(userStory => userStory.issues));
 
         for (const userStory of epic) {
             userStory.relatedIssues = await userStory.relatedIssues;
@@ -281,7 +280,6 @@ class Github {
                 }
             }`
         let issues = [];
-        // await Promise.all([]);
         let resultSets = searchRepos.map(repo => {
             let [owner, project] = repo.split('/');
             return graphql(query, {
@@ -293,7 +291,6 @@ class Github {
                 labels: labels
             });
         });
-        Promise.all(resultSets);
         for (const resultSet of resultSets) {
             let results = await resultSet;
             let resultIssues = results.repository.issues.edges.map(
