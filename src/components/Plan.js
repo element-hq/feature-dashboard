@@ -37,41 +37,15 @@ class Plan extends Component {
     render() {
         const { query } = this.props;
         let categories = [];
-        if (query.epics) {
+        if (
+            [].concat(...this.props.issues.map(issue => issue.labels))
+              .some(label => label.startsWith('phase:'))
+        ) {
             categories.push(issues => {
-                let categorized = [];
-
-                for (const userStory of this.props.meta.userStories) {
-                    categorized.push({
-                        key: userStory.number,
-                        heading: (
-                            <a key={ userStory.number }
-                               target="_blank"
-                               rel="noopener noreferrer" 
-                               href={ userStory.url }> User Story: {userStory.number} { userStory.title } </a>
-                        ),
-                        items: issues.filter(issue => issue.story && issue.story.number === userStory.number)
-                    });
-                }
-                let unstoried = issues.filter(issue => !issue.story);
-                if (unstoried.length > 0) {
-                    categorized.push({
-                        key: -1,
-                        heading: 'Issues not associated with a story',
-                        items: unstoried
-                    });
-                }
-
-                return categorized;
-            });
-        }
-        /*
-        if ([].concat(...this.props.issues
-                .map(issue => issue.labels)
-            )
-            .some(label => label.startsWith('phase:'))) {
-            categories.push(issues => {
-                let phases = issues.map(issue => issue.getNumberedLabelValue('phase')).sort();
+                let phases = [...new Set(issues
+                    .map(issue => issue.getNumberedLabelValue('phase'))
+                    .filter(phase => phase !== null),
+                )].sort();
 
                 let categorized = [];
                 for (const phase of phases) {
@@ -90,7 +64,34 @@ class Plan extends Component {
                 return categorized;
             });
         }
-        */
+        if (query.epics) {
+            categories.push(issues => {
+                let categorized = [];
+
+                for (const userStory of this.props.meta.userStories) {
+                    categorized.push({
+                        key: userStory.number,
+                        heading: (
+                            <a key={ userStory.number }
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               href={ userStory.url }> User Story: {userStory.number} { userStory.title } </a>
+                        ),
+                        items: issues.filter(issue => issue.story && issue.story.number === userStory.number)
+                    });
+                }
+                let unstoried = issues.filter(issue => !issue.story);
+                if (unstoried.length > 0) {
+                    categorized.push({
+                        key: -1,
+                        heading: 'Issues not associated with a story',
+                        items: unstoried
+                    });
+                }
+
+                return categorized;
+            });
+        }
         if (query.repos && query.repos.length > 1) {
             categories.push(issues => {
                 let repos = [...new Set(issues.map(issue => `${issue.owner}/${issue.repo}`))]
