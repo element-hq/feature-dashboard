@@ -82,7 +82,7 @@ class App extends Component {
         let query = this.parseQueryFromHash(window.location.hash);
         let results = await getIssues(getToken(), query)
         this.setState({
-            query: this.parseQueryFromHash(window.location.hash),
+            query,
             issues: results.issues,
             meta: results.meta
         });
