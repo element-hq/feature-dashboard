@@ -41,7 +41,7 @@ function getToken() {
 
 async function getIssues(token, query) {
     try {
-        if(query.epics) {
+        if (query.epics) {
             return await Github.getEpics(
                 token,
                 query.epics,
