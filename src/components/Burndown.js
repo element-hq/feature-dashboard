@@ -37,6 +37,19 @@ const LINE_COLORS = [
     'rgba(40, 0, 40, 0.5)',
 ];
 
+const title = query => {
+
+    if (query.epics) {
+        return query.epics.join(' ');
+    }
+    else if (query.labels) {
+        return query.labels.join(' ');
+    }
+
+    return 'Untitled.';
+
+}
+
 class Burndown extends Component {
 
     render() {
@@ -53,9 +66,9 @@ class Burndown extends Component {
         // Attempt to bucket issues by phase
         // TODO: Extract this out as a generic issue categoriser
         let label = issue => {
-            let phases = issue.labels.filter(label => label.name.startsWith('phase:'));
+            let phases = issue.labels.filter(label => label.startsWith('phase:'));
             if (phases.length > 0) {
-                return phases[0].name;
+                return phases[0];
             }
             return null;
         };
@@ -90,7 +103,7 @@ class Burndown extends Component {
         let date = new Date(
             Math.max(
                 Math.min(
-                    ...displayedIssues.map(issue => new Date(issue.githubIssue.created_at))
+                    ...displayedIssues.map(issue => new Date(issue.createdAt))
                 ),
                 threeMonthsAgo
             )
@@ -113,8 +126,8 @@ class Burndown extends Component {
             });
 
             buckets[bucket].forEach(issue => {
-                let start = Math.max(0, dates.indexOf(dateFormat(issue.githubIssue.created_at, 'yyyy-mm-dd')));
-                let end = issue.githubIssue.closed_at ? dates.indexOf(dateFormat(issue.githubIssue.closed_at, 'yyyy-mm-dd')) : dates.length;
+                let start = Math.max(0, dates.indexOf(dateFormat(issue.createdAt, 'yyyy-mm-dd')));
+                let end = issue.closedAt ? dates.indexOf(dateFormat(issue.closedAt, 'yyyy-mm-dd')) : dates.length;
                 for (let n = start; n < end; n++) {
                     openIssueCounts[dates[n]][bucket] += 1;
                 }
@@ -129,11 +142,11 @@ class Burndown extends Component {
 
         // Count closed issue deltas for entire project
         issues.forEach(issue => {
-            let { closed_at } = issue.githubIssue;
-            if (!closed_at) {
+            let { closedAt } = issue;
+            if (!closedAt) {
                 return;
             }
-            let closedDate = dateFormat(closed_at, 'yyyy-mm-dd');
+            let closedDate = dateFormat(closedAt, 'yyyy-mm-dd');
             closedIssueDeltas[closedDate] += 1;
         });
 
@@ -211,7 +224,7 @@ class Burndown extends Component {
 
         return (
             <div className="Burndown raised-box">
-                <h3>{ this.props.labels.join(' ') }</h3>
+                <h3>{ title(this.props.query) }</h3>
                 <Line data={ data } options={ options }/>
             </div>
         );

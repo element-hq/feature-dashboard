@@ -13,77 +13,130 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 import Octokit from '@octokit/rest';
 import graphql from '@octokit/graphql';
 
 class Github {
 
-    static async getConnection(token) {
-        if (!token) {
-            return {
-                octokit: new Octokit(),
-                status: 'unauthenticated'
-            }
-        }
-
-        let connection = undefined;
-
-        let octokit = new Octokit({
+    static getOctokit(token) {
+        return new Octokit({
             auth: `token ${token}`
         });
-        await octokit.request('GET /')
-            .then(_ => {
-                connection = {
-                    octokit: octokit,
-                    status: 'authenticated'
-                }
-            })
-            .catch(e => {
-                if (e.name === 'HttpError' && e.status === 401) {
-                    connection = {
-                        octokit: new Octokit(),
-                        status: 'invalid-credentials'
-                    }
-                }
-            });
-
-        return connection;
     }
 
-    static async getTaskCount(octokit, issue) {
-        let options = octokit.issues.listComments.endpoint.merge({
-            owner: issue.owner,
-            repo: issue.repo,
-            number: issue.number
-        });
-        let comments = await octokit.paginate(options);
-        comments = comments.map(comment => comment.body);
-        comments.unshift(issue.body);
-        comments = comments.join("\n").split(/\r?\n/)
-        let completed = comments.filter(comment => comment.trim().toLowerCase().startsWith('- [x]')).length;
-        let outstanding = comments.filter(comment => comment.trim().startsWith('- [ ]')).length;
+    static async getEpics(token, milestones, repos) {
+        // Only the first milestone for now
+        const milestone = milestones[0];
+        const epicMilestone = await this.getMilestone(token, milestone);
+        let issues = [];
+        let epic = [];
+        for (const userStory of epicMilestone.stories) {
+            let label = `story:${userStory.number}`;
+            epic.push({
+                story: userStory,
+                relatedIssues: this.getFullIssues(token, [label], repos)
+            });
+        }
+
+        for (const userStory of epic) {
+            userStory.relatedIssues = await userStory.relatedIssues;
+
+            for (const issue of userStory.relatedIssues) {
+                issue.story = userStory.story;
+            }
+            issues = issues.concat(userStory.relatedIssues);
+
+            /* All of this business is in support of a PoC for a special label format,
+             * size:<owner>/<repo>:<estimate number of stories>, which allows the planner to set a
+             * minimum-expected number of stories to represent on the plan even if those stories
+             * aren't planned yet.
+             * */
+            const minStories = userStory.story.getNumberedLabelValue('size:vector-im/riot-web') || 0;
+            if (minStories > userStory.relatedIssues.length) {
+                let imaginaryIssue = {
+                    owner: 'vector-im',
+                    repo: 'riot-web',
+                    story: userStory.story,
+                    number: -1,
+                    state: 'todo',
+                    title: 'NOT YET PLANNED',
+                    labels: [],
+                    type: 'issues',
+                    createdAt: userStory.story.createdAt,
+                    origin: 'placeholder'
+                }
+                for (let i = 0; i < minStories - userStory.relatedIssues.length; i++) {
+                    issues.push(imaginaryIssue);
+                }
+            }
+        }
+        let milestoneNumber = milestone.split('/').pop();
+        let unstoriedIssues = await this.getFullIssues(token, [`epic:${milestoneNumber}`], repos);
+        issues = issues.concat(unstoriedIssues);
         return {
-            completed: completed,
-            outstanding: outstanding
+            issues: issues,
+            meta: {
+                userStories: epicMilestone.stories,
+                milestoneTitle: epicMilestone.title
+            }
         }
     }
 
-    static async getFullIssues(labels, searchRepos) {
+    static async getMilestone(token, milestone) {
         const query = `
-            query issueBodiesOverTime($owner: String!, $project: String!, $labels: [String!]!) {
+            query milestones($owner: String!, $project: String!, $number: Int!)  {
                 repository(owner: $owner, name: $project) {
-                    issues(first: 100, labels: $labels) {
-                        edges {
-                            cursor
-                            node {
-                                number
-                                body
-                                userContentEdits(first: 100) {
-                                    edges {
-                                        node {
-                                            editedAt
-                                            diff
+                    milestone(number: $number) {
+                        title
+                        issues(first: 100) {
+                            edges {
+                                cursor
+                                node {
+                                    number
+                                    title
+                                    body
+                                    url
+                                    state
+                                    createdAt
+                                    closedAt
+                                    assignees(first: 100) {
+                                        edges {
+                                            node {
+                                                login
+                                            }
+                                        }
+                                    }
+                                    repository {
+                                        owner {
+                                            login
+                                        }
+                                        name
+                                    }
+                                    labels(first: 100) {
+                                        edges {
+                                            node {
+                                                name
+                                            }
+                                        }
+                                    }
+                                    userContentEdits(first: 100) {
+                                        edges {
+                                            node {
+                                                editedAt
+                                                diff
+                                            }
+                                        }
+                                    }
+                                    timelineItems(last: 1, itemTypes: [ASSIGNED_EVENT]) {
+                                        edges {
+                                            node {
+                                                ...on AssignedEvent {
+                                                    actor {
+                                                        login
+                                                    }
+                                                    createdAt
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -92,21 +145,165 @@ class Github {
                     }
                 }
             }`
-        for (const repo of searchRepos) {
+        let [owner, project, _, number] = milestone.split('/');
+
+        let results = await graphql(query, {
+            headers: {
+                authorization: `token ${token}`
+            },
+            owner: owner,
+            project: project,
+            number: parseInt(number, 10)
+        });
+
+        const stories = results.repository.milestone.issues.edges.map(result =>
+            Issue.fromGraphql(result.node));
+
+        return {
+            title: results.repository.milestone.title,
+            stories: stories
+        }
+    }
+
+    static async getFullIssues(token, labels, searchRepos) {
+        const query = `
+            query issueBodiesOverTime($owner: String!, $project: String!, $labels: [String!]!) {
+                repository(owner: $owner, name: $project) {
+                    issues(first: 100, labels: $labels) {
+                        edges {
+                            cursor
+                            node {
+                                number
+                                title
+                                body
+                                url
+                                state
+                                createdAt
+                                closedAt
+                                assignees(first: 100) {
+                                    edges {
+                                        node {
+                                            login
+                                        }
+                                    }
+                                }
+                                repository {
+                                    owner {
+                                        login
+                                    }
+                                    name
+                                }
+                                labels(first: 100) {
+                                    edges {
+                                        node {
+                                            name
+                                        }
+                                    }
+                                }
+                                userContentEdits(first: 100) {
+                                    edges {
+                                        node {
+                                            editedAt
+                                            diff
+                                        }
+                                    }
+                                }
+                                timelineItems(last: 1, itemTypes: [ASSIGNED_EVENT]) {
+                                    edges {
+                                        node {
+                                            ...on AssignedEvent {
+                                                actor {
+                                                    login
+                                                }
+                                                createdAt
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    pullRequests(first: 100, labels: $labels) {
+                        edges {
+                            cursor
+                            node {
+                                number
+                                title
+                                body
+                                url
+                                state
+                                createdAt
+                                closedAt
+                                assignees(first: 100) {
+                                    edges {
+                                        node {
+                                            name
+                                        }
+                                    }
+                                }
+                                repository {
+                                    owner {
+                                        login
+                                    }
+                                    name
+                                }
+                                labels(first: 100) {
+                                    edges {
+                                        node {
+                                            name
+                                        }
+                                    }
+                                }
+                                userContentEdits(first: 100) {
+                                    edges {
+                                        node {
+                                            editedAt
+                                            diff
+                                        }
+                                    }
+                                }
+                                timelineItems(last: 1, itemTypes: [ASSIGNED_EVENT]) {
+                                    edges {
+                                        node {
+                                            ...on AssignedEvent {
+                                                actor {
+                                                    login
+                                                }
+                                                createdAt
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }`
+        let issues = [];
+        let resultSets = searchRepos.map(repo => {
             let [owner, project] = repo.split('/');
-            let issues = await graphql(query, {
+            return graphql(query, {
                 headers: {
-                    authorization: "token f3b7ff551d31170bef759d1a6889ee62ce5b3a83"
+                    authorization: `token ${token}`
                 },
                 owner: owner,
                 project: project,
                 labels: labels
             });
-            console.log(issues);
+        });
+        for (const resultSet of resultSets) {
+            let results = await resultSet;
+            let resultIssues = results.repository.issues.edges.map(
+                issue => Issue.fromGraphql(issue.node));
+            let resultPullRequests = results.repository.pullRequests.edges.map(
+                pullRequest => Issue.fromGraphql(pullRequest.node));
+            issues = issues.concat(resultIssues).concat(resultPullRequests);
         }
+        return issues;
     }
 
-    static async getIssues(octokit, labels, searchRepos) {
+    static async getIssues(token, labels, searchRepos) {
+        let octokit = this.getOctokit(token);
         let searchString = searchRepos.map(repo => 'repo:' + repo)
             .join(' ') + ' ' + labels.map(label => `label:${label}`).join(' ');
 
@@ -116,38 +313,89 @@ class Github {
 
         let githubIssues = await octokit.paginate(options);
 
-        return githubIssues.map(issue => new Issue(issue));
+        return {
+            issues: githubIssues.map(issue => Issue.fromOctokit(issue)),
+            meta: {}
+        }
     }
 
 }
 
 class Issue {
 
-    constructor(githubIssue) {
+    static fromOctokit(octokitIssue) {
+        const labels = octokitIssue.labels.map(label => label.name);
+        const [owner, repo] = octokitIssue.repository_url.split('/').slice(-2);
+        const assigned = octokitIssue.assignees.length > 0 || octokitIssue.assignee;
+        const assignees = (octokitIssue.assignees ||
+            [octokitIssue.assignee]).map(assignee => assignee.login);
 
-        this.githubIssue = githubIssue;
-        this.url = githubIssue.html_url;
-        this.labels = githubIssue.labels.map(label => {
-            return {
-                color: label.color,
-                name: label.name
+        return {
+            origin: 'octokit',
+            source: octokitIssue,
+            url: octokitIssue.html_url,
+            title: octokitIssue.title,
+            number: octokitIssue.number,
+            type: Issue.getType(labels),
+            state: Issue.getState(octokitIssue.state, assigned),
+            labels: labels,
+            owner: owner,
+            repo: repo,
+            assigned: assigned,
+            assignees: assignees,
+            createdAt: octokitIssue.created_at,
+            closedAt: octokitIssue.closed_at,
+            getNumberedLabelValue: function(labelPrefix) {
+                let matches = this.labels.filter(label => label.startsWith(`${labelPrefix}:`));
+                if (matches.length > 0) {
+                    return Number(matches[0].split(':').pop());
+                }
+                else return null;
             }
-        });
-        this.progress = undefined;
-        this.title = githubIssue.title;
-        this.number = githubIssue.number;
-        this.assignees = githubIssue.assignees;
-
-        let components = githubIssue.repository_url.split('/');
-        [this.owner, this.repo] = components.slice(components.length - 2);
-
-        this.type = Issue.getType(githubIssue);
-        this.state = Issue.getState(githubIssue);
-
+        }
     }
 
-    static getType(githubIssue) {
-        let labels = githubIssue.labels.map(label => label.name);
+    static fromGraphql(graphqlIssue) {
+        const labels = graphqlIssue.labels.edges.map(x => x.node.name);
+        const assigned = graphqlIssue.assignees.edges.length > 0;
+        const assignees = graphqlIssue.assignees.edges.map(assignee => assignee.node.login);
+        const inProgressSince = graphqlIssue.timelineItems.edges.length > 0 ?
+            graphqlIssue.timelineItems.edges[0].node.createdAt.slice(0,10) : null;
+
+        const subTasks = graphqlIssue.body.split('\n')
+            .map(line => line.trim())
+            .filter(line => line.startsWith('- ['));
+
+        const done = subTasks.filter(line => line.toUpperCase().startsWith('- [X] ')).length;
+        const pending = subTasks.filter(line => line.toUpperCase().startsWith('- [ ] ')).length;
+        return {
+            origin: 'graphql',
+            source: graphqlIssue,
+            url: graphqlIssue.url,
+            title: graphqlIssue.title,
+            number: graphqlIssue.number,
+            type: Issue.getType(labels),
+            state: Issue.getState(graphqlIssue.state, assigned),
+            labels: labels,
+            owner: graphqlIssue.repository.owner.login,
+            repo: graphqlIssue.repository.name,
+            assigned: assigned,
+            assignees: assignees,
+            createdAt: graphqlIssue.createdAt,
+            closedAt: graphqlIssue.closedAt,
+            inProgressSince: inProgressSince,
+            progress: pending ? `${done} / ${done + pending}` : null,
+            getNumberedLabelValue: function(labelPrefix) {
+                let matches = this.labels.filter(label => label.startsWith(`${labelPrefix}:`));
+                if (matches.length > 0) {
+                    return Number(matches[0].split(':').pop());
+                }
+                else return null;
+            }
+        }
+    }
+
+    static getType(labels) {
         if (labels.includes('bug')) {
             for (const priority of ['p1', 'p2', 'p3']) {
                 if (labels.includes(priority)) {
@@ -163,18 +411,15 @@ class Issue {
         return 'others';
     }
 
-    static getState(githubIssue) {
-        if (githubIssue.state === 'closed') {
+    static getState(githubState, assigned) {
+        if (['CLOSED', 'MERGED'].includes(githubState.toUpperCase())) {
             return 'done';
         }
-        else if (
-            githubIssue.assignees.length === 0 ||
-            githubIssue.assignee === undefined
-        ) {
-            return 'todo';
+        else if (assigned) {
+            return 'wip';
         }
         else {
-            return 'wip';
+            return 'todo';
         }
     }
 
