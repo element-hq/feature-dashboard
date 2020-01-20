@@ -39,29 +39,27 @@ function getToken() {
     }
 }
 
-class FeatureDashboard {
-    static async getIssues(token, query) {
-        try {
-            if(query.epics) {
-                return await Github.getEpics(
-                    token,
-                    query.epics,
-                    query.repos
-                );
-            }
-            else {
-                return await Github.getIssues(
-                    token,
-                    query.labels,
-                    query.repos
-                );
-            }
+async function getIssues(token, query) {
+    try {
+        if(query.epics) {
+            return await Github.getEpics(
+                token,
+                query.epics,
+                query.repos
+            );
         }
-        catch (e) {
-            console.log('error', e);
-            alert(e);
-            throw e;
+        else {
+            return await Github.getIssues(
+                token,
+                query.labels,
+                query.repos
+            );
         }
+    }
+    catch (e) {
+        console.log('error', e);
+        alert(e);
+        throw e;
     }
 }
 
@@ -82,7 +80,7 @@ class App extends Component {
 
     async componentDidMount() {
         let query = this.parseQueryFromHash(window.location.hash);
-        let results = await FeatureDashboard.getIssues(getToken(), query)
+        let results = await getIssues(getToken(), query)
         this.setState({
             query: this.parseQueryFromHash(window.location.hash),
             issues: results.issues,
