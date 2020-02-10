@@ -120,7 +120,11 @@ class App extends Component {
     }
 
     parseQueryFromHash(hash) {
-        const query = queryString.parse(hash.substring(hash.indexOf("?")));
+        let query = {};
+        const hashIndex = hash.indexOf("?");
+        if (hashIndex >= 0) {
+            query = queryString.parse(hash.substring(hashIndex));
+        }
         // Homogenise values from the query params so that we're always dealing with
         // arrays.
         let parsed = {};
