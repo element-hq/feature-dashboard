@@ -64,7 +64,7 @@ function establishDeliveryDate(issue, deliveryDate) {
     }
 }
 
-function generateSummary(issues, labels, searchRepos) { 
+function generateSummary(issues, labels, searchRepos = []) {
     const repos = {};
     for (const repo of searchRepos) {
         repos[repo] = template(labels, repo);
