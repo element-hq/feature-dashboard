@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import React, { Component } from 'react';
+import classNames from 'classnames';
 
 class IssueTree extends Component {
 
@@ -36,9 +37,25 @@ class IssueTree extends Component {
 
         return (
             categorized.map(bucket => {
+                const total = bucket.items.length;
+                const done = bucket.items.filter(item => item.state === "done").length;
+
+                const headingClasses = classNames({
+                    heading: true,
+                    done: done === total,
+                });
+
+                const stateClasses = classNames({
+                    state: true,
+                    done: done === total,
+                });
+
                 return (
                     <ul key={ bucket.key }>
-                        <li className="heading">{ bucket.heading }
+                        <li>
+                            <span className={headingClasses}>{bucket.heading}&nbsp;
+                                <span className={stateClasses}>({done} / {total})</span>
+                            </span>
                             <IssueTree
                                 categories={ categories.slice(1) }
                                 items={ bucket.items }

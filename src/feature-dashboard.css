@@ -42,7 +42,8 @@ body {
     display: inline-block;
 }
 
-.Plan .task.done {
+.Plan .task.done,
+.Plan .heading.done {
     opacity: 0.4;
 }
 
