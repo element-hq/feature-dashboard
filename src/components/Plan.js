@@ -62,11 +62,15 @@ class Plan extends Component {
                                 items: issues.filter(issue => issue.getNumberedLabelValue('phase') === phase)
                             });
                         }
-                        categorized.push({
-                            key: -1,
-                            heading: 'unphased',
-                            items: issues.filter(issue => issue.getNumberedLabelValue('phase') === null)
-                        });
+
+                        const unphased = issues.filter(issue => issue.getNumberedLabelValue('phase') === null);
+                        if (unphased.length > 0) {
+                            categorized.push({
+                                key: -1,
+                                heading: 'unphased',
+                                items: unphased,
+                           });
+                        }
 
                         return categorized;
                     });
