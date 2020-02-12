@@ -42,6 +42,15 @@ body {
     display: inline-block;
 }
 
+.Plan .bucket {
+    list-style: disclosure-closed;
+    cursor: pointer;
+}
+
+.Plan .bucket.expanded {
+    list-style: disclosure-open;
+}
+
 .Plan .task.done,
 .Plan .heading.done {
     opacity: 0.4;

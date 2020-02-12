@@ -1,5 +1,5 @@
 /*
-Copyright 2019 New Vector Ltd
+Copyright 2019, 2020 New Vector Ltd
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,16 +18,16 @@ import React, { Component } from 'react';
 import classNames from 'classnames';
 
 class IssueTree extends Component {
-
     render() {
         let categories = this.props.categories;
         let items = this.props.items;
         let renderItem = this.props.renderItem;
+        let sortItems = this.props.sortItems;
 
         if (categories.length === 0) {
             return (
                 <ul>
-                    { items.sort(this.props.sortItems).map(item => renderItem(item)) }
+                    { items.sort(sortItems).map(item => renderItem(item)) }
                 </ul>
             );
         }
@@ -37,35 +37,96 @@ class IssueTree extends Component {
 
         return (
             categorized.map(bucket => {
-                const total = bucket.items.length;
-                const done = bucket.items.filter(item => item.state === "done").length;
-
-                const headingClasses = classNames({
-                    heading: true,
-                    done: done === total,
-                });
-
-                const stateClasses = classNames({
-                    state: true,
-                    done: done === total,
-                });
-
-                return (
-                    <ul key={ bucket.key }>
-                        <li>
-                            <span className={headingClasses}>{bucket.heading}&nbsp;
-                                <span className={stateClasses}>({done} / {total})</span>
-                            </span>
-                            <IssueTree
-                                categories={ categories.slice(1) }
-                                items={ bucket.items }
-                                renderItem={ renderItem }
-                                sortItems={ this.props.sortItems }
-                            />
-                        </li>
-                    </ul>
-                )
+                return <IssueTreeBucket
+                    key={bucket.key}
+                    bucket={bucket}
+                    categories={categories}
+                    renderItem={renderItem}
+                    sortItems={sortItems}
+                />
             })
+        );
+    }
+}
+
+class IssueTreeBucket extends Component {
+    constructor(props) {
+        super(props);
+
+        const { bucket } = props;
+
+        const totalItems = bucket.items.length;
+        const doneItems = bucket.items.filter(item => item.state === "done").length;
+        const allDone = doneItems === totalItems;
+
+        this.state = {
+            totalItems,
+            doneItems,
+            allDone,
+            expanded: !allDone,
+        };
+    }
+
+    onHeadingClick = () => {
+        this.setState({
+            expanded: !this.state.expanded,
+        });
+    }
+
+    render() {
+        const {
+            bucket,
+            categories,
+            renderItem,
+            sortItems,
+        } = this.props;
+
+        const {
+            totalItems,
+            doneItems,
+            allDone,
+            expanded,
+        } = this.state;
+
+        const bucketClasses = classNames({
+            bucket: true,
+            expanded,
+        })
+
+        const headingClasses = classNames({
+            heading: true,
+            done: allDone,
+        });
+
+        const stateClasses = classNames({
+            state: true,
+            done: allDone,
+        });
+
+        let children;
+        if (expanded) {
+            children = (
+                <IssueTree
+                    categories={categories.slice(1)}
+                    items={bucket.items}
+                    renderItem={renderItem}
+                    sortItems={sortItems}
+                />
+            );
+        }
+
+        return (
+            <ul>
+                <li className={bucketClasses}>
+                    <span
+                        className={headingClasses}
+                        onClick={this.onHeadingClick}
+                    >{bucket.heading}&nbsp;
+                        <span className={stateClasses}>({doneItems} / {totalItems})</span>
+                    </span>
+                    {children}
+                </li>
+            </ul>
         );
     }
 }
