@@ -67,7 +67,13 @@ class IssueTreeBucket extends Component {
         };
     }
 
-    onHeadingClick = () => {
+    onBucketClick = (e) => {
+        const targetClasses = e.target.classList;
+        if (!targetClasses.contains("bucket") && !targetClasses.contains("heading")) {
+            // Ignore events from child list items
+            return;
+        }
+        e.stopPropagation();
         this.setState({
             expanded: !this.state.expanded,
         });
@@ -117,10 +123,12 @@ class IssueTreeBucket extends Component {
 
         return (
             <ul>
-                <li className={bucketClasses}>
+                <li
+                    className={bucketClasses}
+                    onClick={this.onBucketClick}
+                >
                     <span
                         className={headingClasses}
-                        onClick={this.onHeadingClick}
                     >{bucket.heading}&nbsp;
                         <span className={stateClasses}>({doneItems} / {totalItems})</span>
                     </span>
