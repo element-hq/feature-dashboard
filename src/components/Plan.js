@@ -87,7 +87,7 @@ class Plan extends Component {
                                     <a key={ userStory.number }
                                        target="_blank"
                                        rel="noopener noreferrer"
-                                       href={ userStory.url }> User Story: {userStory.number} { userStory.title } </a>
+                                       href={ userStory.url }>User Story: {userStory.number} { userStory.title }</a>
                                 ),
                                 items: issues.filter(issue => issue.story && issue.story.number === userStory.number)
                             });
