@@ -42,6 +42,13 @@ class Plan extends Component {
         const enabledCategories = query.categorys || ['story', 'repo'];
         let categories = [];
 
+        // Requirements for new issues to appear in the plan.
+        // These are accumulated across categories as we descend.
+        let requirements = {
+            repo: null,
+            labels: [],
+        };
+
         for (const enabledCategory of enabledCategories) {
             if (enabledCategory === 'phase') {
                 if (
@@ -59,6 +66,7 @@ class Plan extends Component {
                             categorized.push({
                                 key: phase,
                                 heading: `phase:${phase}`,
+                                addRequirements: req => req.labels = [...req.labels, `phase:${phase}`],
                                 items: issues.filter(issue => issue.getNumberedLabelValue('phase') === phase)
                             });
                         }
@@ -89,6 +97,7 @@ class Plan extends Component {
                                        rel="noopener noreferrer"
                                        href={ userStory.url }>User Story: {userStory.number} { userStory.title }</a>
                                 ),
+                                addRequirements: req => req.labels = [...req.labels, `story:${userStory.number}`],
                                 items: issues.filter(issue => issue.story && issue.story.number === userStory.number)
                             });
                         }
@@ -117,12 +126,15 @@ class Plan extends Component {
                             categorized.push({
                                 key: repo,
                                 heading: repo,
+                                addRequirements: req => req.repo = repo,
                                 items: issues.filter(issue => `${issue.owner}/${issue.repo}` === repo)
                             });
                         }
 
                         return categorized;
                     });
+                } else {
+                    requirements.repo = query.repos[0];
                 }
             } else {
                 console.warn("Unknown category", enabledCategory);
@@ -161,7 +173,8 @@ class Plan extends Component {
             <div className="Plan raised-box">
                 <p className="title">{ this.props.meta.milestoneTitle || title(query) }</p>
                 <IssueTree
-                    categories={ categories }
+                    categories={categories}
+                    requirements={requirements}
                     items={ this.props.issues }
                     renderItem={ renderItem }
                     sortItems={ sortItems }

@@ -16,10 +16,15 @@ limitations under the License.
 
 import React, { Component } from 'react';
 import classNames from 'classnames';
+import Github from '../Github';
 
 class IssueTree extends Component {
     render() {
         let categories = this.props.categories;
+        let requirements = this.props.requirements || {
+            repo: null,
+            labels: [],
+        };
         let items = this.props.items;
         let renderItem = this.props.renderItem;
         let sortItems = this.props.sortItems;
@@ -40,6 +45,7 @@ class IssueTree extends Component {
                 return <IssueTreeBucket
                     key={bucket.key}
                     bucket={bucket}
+                    parentRequirements={requirements}
                     categories={categories}
                     renderItem={renderItem}
                     sortItems={sortItems}
@@ -53,17 +59,26 @@ class IssueTreeBucket extends Component {
     constructor(props) {
         super(props);
 
-        const { bucket } = props;
+        const {
+            bucket,
+            parentRequirements,
+        } = props;
 
         const totalItems = bucket.items.length;
         const doneItems = bucket.items.filter(item => item.state === "done").length;
         const allDone = doneItems === totalItems;
+
+        const requirements = Object.assign({}, parentRequirements);
+        if (bucket.addRequirements) {
+            bucket.addRequirements(requirements);
+        }
 
         this.state = {
             totalItems,
             doneItems,
             allDone,
             expanded: !allDone,
+            requirements,
         };
     }
 
@@ -79,6 +94,10 @@ class IssueTreeBucket extends Component {
         });
     }
 
+    onNewIssueClick = (e) => {
+        e.stopPropagation();
+    }
+
     render() {
         const {
             bucket,
@@ -92,6 +111,7 @@ class IssueTreeBucket extends Component {
             doneItems,
             allDone,
             expanded,
+            requirements,
         } = this.state;
 
         const bucketClasses = classNames({
@@ -109,11 +129,26 @@ class IssueTreeBucket extends Component {
             done: allDone,
         });
 
+        const childCategories = categories.slice(1);
+        let newIssue;
+        if (childCategories.length === 0 && requirements.repo) {
+            newIssue = <a
+                className="new-issue"
+                onClick={this.onNewIssueClick}
+                href={Github.getNewIssueURL(requirements)}
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Add
+            </a>;
+        }
+
         let children;
         if (expanded) {
             children = (
                 <IssueTree
-                    categories={categories.slice(1)}
+                    categories={childCategories}
+                    requirements={requirements}
                     items={bucket.items}
                     renderItem={renderItem}
                     sortItems={sortItems}
@@ -130,7 +165,8 @@ class IssueTreeBucket extends Component {
                     <span
                         className={headingClasses}
                     >{bucket.heading}&nbsp;
-                        <span className={stateClasses}>({doneItems} / {totalItems})</span>
+                        <span className={stateClasses}>({doneItems} / {totalItems})</span>&nbsp;
+                        {newIssue}
                     </span>
                     {children}
                 </li>

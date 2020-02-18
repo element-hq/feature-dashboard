@@ -1,5 +1,5 @@
 /*
-Copyright 2019 New Vector Ltd
+Copyright 2019, 2020 New Vector Ltd
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,8 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 import Octokit from '@octokit/rest';
 import graphql from '@octokit/graphql';
+import queryString from 'query-string';
 
 class Github {
 
@@ -334,6 +336,23 @@ class Github {
             issues: githubIssues.map(issue => Issue.fromOctokit(issue)),
             meta: {}
         }
+    }
+
+    static getNewIssueURL({ repo, labels = [] }) {
+        if (!repo) {
+            throw new Error("Repo required for new issue URL");
+        }
+        const query = queryString.stringify(
+            {
+                // Skip any default issue templates
+                body: "",
+                labels,
+            },
+            {
+                arrayFormat: 'comma',
+            },
+        );
+        return `https://github.com/${repo}/issues/new?${query}`;
     }
 
 }

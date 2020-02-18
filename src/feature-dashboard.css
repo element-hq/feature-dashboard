@@ -60,6 +60,19 @@ body {
     color: green;
 }
 
+.Plan .new-issue {
+    background-color: #269f42;
+    color: #fff;
+    text-decoration: none;
+    padding: 1px 4px;
+    border-radius: 4px;
+    opacity: 0.5;
+}
+
+.Plan .new-issue:hover {
+    opacity: 1;
+}
+
 .Plan .label.blocked {
     color: red;
 }
