@@ -130,17 +130,34 @@ class IssueTreeBucket extends Component {
         });
 
         const childCategories = categories.slice(1);
-        let newIssue;
+        let newIssueButtons;
         if (childCategories.length === 0 && requirements.repo) {
-            newIssue = <a
-                className="new-issue"
-                onClick={this.onNewIssueClick}
-                href={Github.getNewIssueURL(requirements)}
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Add
-            </a>;
+            // For the bug button, append the `bug` label.
+            const bugRequirements = Object.assign({}, requirements);
+            bugRequirements.labels = [...bugRequirements.labels, "bug"];
+
+            newIssueButtons = (
+                <span>
+                    <a
+                        className="new-issue"
+                        onClick={this.onNewIssueClick}
+                        href={Github.getNewIssueURL(requirements)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Add Task
+                    </a>
+                    <a
+                        className="new-issue"
+                        onClick={this.onNewIssueClick}
+                        href={Github.getNewIssueURL(bugRequirements)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Add Bug
+                    </a>
+                </span>
+            );
         }
 
         let children;
@@ -166,7 +183,7 @@ class IssueTreeBucket extends Component {
                         className={headingClasses}
                     >{bucket.heading}&nbsp;
                         <span className={stateClasses}>({doneItems} / {totalItems})</span>&nbsp;
-                        {newIssue}
+                        {newIssueButtons}
                     </span>
                     {children}
                 </li>
