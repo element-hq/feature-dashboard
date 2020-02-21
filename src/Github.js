@@ -178,12 +178,15 @@ class Github {
     }
 
     static async getFullIssues(token, labels, searchRepos) {
-        const query = `
-            query issueBodiesOverTime($owner: String!, $project: String!, $labels: [String!]!) {
+        const buildQuery = (type) => `
+            query issueBodiesOverTime($owner: String!, $project: String!, $labels: [String!]!, $after: String) {
                 repository(owner: $owner, name: $project) {
-                    issues(first: 100, labels: $labels) {
+                    ${type}(first: 100, after: $after, labels: $labels) {
+                        pageInfo {
+                            hasNextPage
+                            endCursor
+                        }
                         edges {
-                            cursor
                             node {
                                 number
                                 title
@@ -235,81 +238,56 @@ class Github {
                             }
                         }
                     }
-                    pullRequests(first: 100, labels: $labels) {
-                        edges {
-                            cursor
-                            node {
-                                number
-                                title
-                                body
-                                url
-                                state
-                                createdAt
-                                closedAt
-                                assignees(first: 100) {
-                                    edges {
-                                        node {
-                                            name
-                                        }
-                                    }
-                                }
-                                repository {
-                                    owner {
-                                        login
-                                    }
-                                    name
-                                }
-                                labels(first: 100) {
-                                    edges {
-                                        node {
-                                            name
-                                        }
-                                    }
-                                }
-                                userContentEdits(first: 100) {
-                                    edges {
-                                        node {
-                                            editedAt
-                                            diff
-                                        }
-                                    }
-                                }
-                                timelineItems(last: 1, itemTypes: [ASSIGNED_EVENT]) {
-                                    edges {
-                                        node {
-                                            ...on AssignedEvent {
-                                                actor {
-                                                    login
-                                                }
-                                                createdAt
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }`
         let issues = [];
-        let resultSets = searchRepos.map(repo => {
+        const queriesInFlight = new Set();
+
+        for (const repo of searchRepos) {
             let [owner, project] = repo.split('/');
-            return graphql(query, {
-                headers: {
-                    authorization: `token ${token}`
-                },
-                owner: owner,
-                project: project,
-                labels: labels
-            });
-        });
-        for (const resultSet of resultSets) {
-            let results = await resultSet;
-            let resultIssues = results.repository.issues.edges.map(
-                issue => Issue.fromGraphql(issue.node));
-            let resultPullRequests = results.repository.pullRequests.edges.map(
-                pullRequest => Issue.fromGraphql(pullRequest.node));
-            issues = issues.concat(resultIssues).concat(resultPullRequests);
+            for (const type of ['issues', 'pullRequests']) {
+                const variables = {
+                    owner: owner,
+                    project: project,
+                    labels: labels,
+                };
+                queriesInFlight.add({
+                    variables,
+                    query: graphql(buildQuery(type), Object.assign({
+                        headers: {
+                            authorization: `token ${token}`
+                        },
+                    }, variables)),
+                });
+            }
+        }
+
+        while (queriesInFlight.size > 0) {
+            for (const inFlight of queriesInFlight.values()) {
+                const { variables, query } = inFlight
+                const results = await query;
+                const type = Object.keys(results.repository)[0]; // issues or pullRequests
+                const issuesData = results.repository[type];
+                const issuesBatch = issuesData.edges.map(
+                    issue => Issue.fromGraphql(issue.node)
+                );
+                issues = issues.concat(issuesBatch);
+
+                // Remove and paginate if needed
+                queriesInFlight.delete(inFlight);
+                if (issuesData.pageInfo.hasNextPage) {
+                    queriesInFlight.add({
+                        variables,
+                        query: graphql(buildQuery(type), Object.assign({
+                            headers: {
+                                authorization: `token ${token}`
+                            },
+                            after: issuesData.pageInfo.endCursor,
+                        }, variables)),
+                    });
+
+                }
+            }
         }
         return issues;
     }
