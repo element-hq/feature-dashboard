@@ -419,10 +419,7 @@ class Issue {
             return `p1bugs`; // If the bug isn't prioritised, counting it as P1 will encourage
                              // prioritisation.
         }
-        else if (labels.includes('feature') || labels.includes('enhancement')) {
-            return 'issues';
-        }
-        return 'others';
+        return 'issues';
     }
 
     static getState(githubState, assigned) {

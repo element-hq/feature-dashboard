@@ -28,21 +28,18 @@ function template(labels, repo) {
             p1bugs: [],
             p2bugs: [],
             p3bugs: [],
-            others: []
         },
         wip: {
             issues: [],
             p1bugs: [],
             p2bugs: [],
             p3bugs: [],
-            others: []
         },
         done: {
             issues: [],
             p1bugs: [],
             p2bugs: [],
             p3bugs: [],
-            others: []
         }
     };
 }
@@ -174,7 +171,6 @@ class SummaryRow extends Component {
                         [
                             'is:open',
                             'no:assignee',
-                            'label:feature'
                         ],
                         repoFeature.todo.issues
                     )
@@ -186,7 +182,6 @@ class SummaryRow extends Component {
                         [
                             'is:open',
                             'assignee:*',
-                            'label:feature'
                         ],
                         repoFeature.wip.issues
                     )
@@ -197,7 +192,6 @@ class SummaryRow extends Component {
                         repoFeature.labels,
                         [
                             'is:closed',
-                            'label:feature'
                         ],
                         repoFeature.done.issues
                     )
@@ -265,44 +259,6 @@ class SummaryRow extends Component {
                             'label:bug'
                         ],
                         repoFeature.done.p1bugs.concat(repoFeature.done.p2bugs).concat(repoFeature.done.p3bugs)
-                    )
-                }</div>
-                <div>{
-                    this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
-                        [
-                            'is:open',
-                            'no:assignee',
-                            '-label:feature',
-                            '-label:bug',
-                        ],
-                        repoFeature.todo.others
-                    )
-                }</div>
-                <div>{
-                    this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
-                        [
-                            'is:open',
-                            'assignee:*',
-                            '-label:feature',
-                            '-label:bug',
-                        ],
-                        repoFeature.wip.others
-                    )
-                }</div>
-                <div>{
-                    this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
-                        [
-                            'is:closed',
-                            '-label:feature',
-                            '-label:bug',
-                        ],
-                        repoFeature.done.others
                     )
                 }</div>
                 <div className={ repoFeature.deliveryDate ? "" : "NoDate" }>{ repoFeature.deliveryDate ?
@@ -376,9 +332,6 @@ class Summary extends Component {
                     <div className="Summary-Column Bugs"></div>
                     <div className="Summary-Column Bugs"></div>
                     <div className="Summary-Column Bugs"></div>
-                    <div className="Summary-Column Implementation"></div>
-                    <div className="Summary-Column Implementation"></div>
-                    <div className="Summary-Column Implementation"></div>
                     <div className="Summary-Column"></div>
                     <div className="Summary-Column"></div>
                     <div className="Summary-Row Summary-TableHeader">
@@ -391,9 +344,6 @@ class Summary extends Component {
                         <div>P3</div>
                         <div>WIP</div>
                         <div>Fixed</div>
-                        <div><span className="MetaTitleHolder"><span className="MetaTitle">Other</span></span>Todo</div>
-                        <div>WIP</div>
-                        <div>Done</div>
                         <div>Delivery</div>
                         <div></div>
                     </div>
