@@ -16,7 +16,7 @@ limitations under the License.
 
 import React, { Component } from 'react';
 import classNames from 'classnames';
-import Github from '../Github';
+import Github from '../data/Github';
 
 class IssueTree extends Component {
     render() {
