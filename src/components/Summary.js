@@ -363,7 +363,7 @@ class Summary extends Component {
         return (
             <div className="Summary raised-box">
                 <div className="Summary-Header">
-                    <div className="Label">{ title(this.props.query) }</div>
+                    <div className="Label">{ this.props.meta.milestoneTitle || title(this.props.query) }</div>
                     <div className="PercentComplete">{ this.calculatePercentCompleted(feature) }%</div>
                 </div>
                 <div className="Summary-Table">
