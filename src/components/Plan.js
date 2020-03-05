@@ -16,8 +16,10 @@ limitations under the License.
 
 import React, { Component } from 'react';
 import moment from 'moment';
+import classNames from 'classnames';
 import IssueTree from './IssueTree'
 import { categorise } from '../data/categories';
+import Github from '../data/Github';
 
 const title = query => {
 
@@ -38,25 +40,85 @@ class Plan extends Component {
         const { query, issues, meta } = this.props;
         const { categories, requirements } = categorise({ query, issues, meta });
 
+        const decorateHeadingTitle = ({
+            title,
+            hasChildCategories,
+            requirements,
+            doneItems,
+            totalItems,
+            allDone,
+        }) => {
+            let newIssueButtons;
+            if (!hasChildCategories && requirements.repo) {
+                // For the bug button, append the `bug` label.
+                const bugRequirements = Object.assign({}, requirements);
+                bugRequirements.labels = [...bugRequirements.labels, "bug"];
+
+                newIssueButtons = (
+                    <span>
+                        <a
+                            className="new-issue"
+                            onClick={this.onNewIssueClick}
+                            href={Github.getNewIssueURL(requirements)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Add Task
+                    </a>
+                        <a
+                            className="new-issue"
+                            onClick={this.onNewIssueClick}
+                            href={Github.getNewIssueURL(bugRequirements)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Add Bug
+                    </a>
+                    </span>
+                );
+            }
+
+            const stateClasses = classNames({
+                state: true,
+                done: allDone,
+            });
+
+            return (
+                <React.Fragment>
+                    {title}&nbsp;<span
+                        className={stateClasses}>({doneItems} / {totalItems})</span>&nbsp;
+                    {newIssueButtons}
+                </React.Fragment>
+            );
+        };
+
         const renderHeading = {
-            phase: phase => {
+            phase: heading => {
+                const { phase } = heading;
+                let title = 'unphased';
                 if (phase) {
-                    return `phase:${phase}`;
+                    title = `phase:${phase}`;
                 }
-                return 'unphased';
+                return decorateHeadingTitle({ title, ...heading });
             },
-            story: story => {
+            story: heading => {
+                const { story } = heading;
+                let title = 'Issues not associated with a story';
                 if (story) {
-                    return (
+                    title = (
                         <a key={story.number}
                             target="_blank"
                             rel="noopener noreferrer"
                             href={story.url}>User Story: {story.number} {story.title}</a>
                     );
                 }
-                return 'Issues not associated with a story';
+                return decorateHeadingTitle({ title, ...heading });
             },
-            repo: repo => repo,
+            repo: heading => {
+                const { repo } = heading;
+                const title = repo;
+                return decorateHeadingTitle({ title, ...heading });
+            },
         };
 
         let renderLabel = (issue, label) => {

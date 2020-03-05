@@ -16,7 +16,6 @@ limitations under the License.
 
 import React, { Component } from 'react';
 import classNames from 'classnames';
-import Github from '../data/Github';
 
 class IssueTree extends Component {
     render() {
@@ -131,40 +130,17 @@ class IssueTreeBucket extends Component {
             done: allDone,
         });
 
-        const stateClasses = classNames({
-            state: true,
-            done: allDone,
-        });
-
         const childCategories = categories.slice(1);
-        let newIssueButtons;
-        if (childCategories.length === 0 && requirements.repo) {
-            // For the bug button, append the `bug` label.
-            const bugRequirements = Object.assign({}, requirements);
-            bugRequirements.labels = [...bugRequirements.labels, "bug"];
-
-            newIssueButtons = (
-                <span>
-                    <a
-                        className="new-issue"
-                        onClick={this.onNewIssueClick}
-                        href={Github.getNewIssueURL(requirements)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Add Task
-                    </a>
-                    <a
-                        className="new-issue"
-                        onClick={this.onNewIssueClick}
-                        href={Github.getNewIssueURL(bugRequirements)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Add Bug
-                    </a>
-                </span>
-            );
+        let heading;
+        if (renderHeading && renderHeading[bucket.type]) {
+            heading = renderHeading[bucket.type]({
+                [bucket.type]: bucket.data,
+                hasChildCategories: childCategories.length > 0,
+                requirements,
+                doneItems,
+                totalItems,
+                allDone,
+            });
         }
 
         let children;
@@ -181,23 +157,13 @@ class IssueTreeBucket extends Component {
             );
         }
 
-        let heading;
-        if (renderHeading && renderHeading[bucket.type]) {
-            heading = renderHeading[bucket.type](bucket.data);
-        }
-
         return (
             <ul>
                 <li
                     className={bucketClasses}
                     onClick={this.onBucketClick}
                 >
-                    <span
-                        className={headingClasses}
-                    >{heading}&nbsp;
-                        <span className={stateClasses}>({doneItems} / {totalItems})</span>&nbsp;
-                        {newIssueButtons}
-                    </span>
+                    <span className={headingClasses}>{heading}</span>
                     {children}
                 </li>
             </ul>
