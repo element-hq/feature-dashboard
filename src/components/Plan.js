@@ -38,6 +38,27 @@ class Plan extends Component {
         const { query, issues, meta } = this.props;
         const { categories, requirements } = categorise({ query, issues, meta });
 
+        const renderHeading = {
+            phase: phase => {
+                if (phase) {
+                    return `phase:${phase}`;
+                }
+                return 'unphased';
+            },
+            story: story => {
+                if (story) {
+                    return (
+                        <a key={story.number}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={story.url}>User Story: {story.number} {story.title}</a>
+                    );
+                }
+                return 'Issues not associated with a story';
+            },
+            repo: repo => repo,
+        };
+
         let renderLabel = (issue, label) => {
             if (!issue.labels.some(({ name }) => name === label)) {
                 return null;
@@ -76,6 +97,7 @@ class Plan extends Component {
                     items={this.props.issues}
                     renderItem={renderItem}
                     sortItems={sortItems}
+                    renderHeading={renderHeading}
                 />
             </div>
         );

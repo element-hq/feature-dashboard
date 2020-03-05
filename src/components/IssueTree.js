@@ -27,14 +27,19 @@ class IssueTree extends Component {
         };
         let items = this.props.items;
         let renderItem = this.props.renderItem;
-        let sortItems = this.props.sortItems;
+        let sortItems = this.props.sortItems || (() => 0);
+        let renderHeading = this.props.renderHeading;
 
         if (categories.length === 0) {
-            return (
-                <ul>
-                    { items.sort(sortItems).map(item => renderItem(item)) }
-                </ul>
-            );
+            if (renderItem) {
+                return (
+                    <ul>
+                        {items.sort(sortItems).map(item => renderItem(item))}
+                    </ul>
+                );
+            } else {
+                return null;
+            }
         }
 
         let categorize = categories[0];
@@ -49,6 +54,7 @@ class IssueTree extends Component {
                     categories={categories}
                     renderItem={renderItem}
                     sortItems={sortItems}
+                    renderHeading={renderHeading}
                 />
             })
         );
@@ -104,6 +110,7 @@ class IssueTreeBucket extends Component {
             categories,
             renderItem,
             sortItems,
+            renderHeading,
         } = this.props;
 
         const {
@@ -169,8 +176,14 @@ class IssueTreeBucket extends Component {
                     items={bucket.items}
                     renderItem={renderItem}
                     sortItems={sortItems}
+                    renderHeading={renderHeading}
                 />
             );
+        }
+
+        let heading;
+        if (renderHeading && renderHeading[bucket.type]) {
+            heading = renderHeading[bucket.type](bucket.data);
         }
 
         return (
@@ -181,7 +194,7 @@ class IssueTreeBucket extends Component {
                 >
                     <span
                         className={headingClasses}
-                    >{bucket.heading}&nbsp;
+                    >{heading}&nbsp;
                         <span className={stateClasses}>({doneItems} / {totalItems})</span>&nbsp;
                         {newIssueButtons}
                     </span>

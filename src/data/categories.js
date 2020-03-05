@@ -14,10 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// XXX: Probably we should change this to be purely a data operation with no
-// React usage at all...?
-import React from 'react';
-
 export function categorise(props) {
     const { query } = props;
     // Enabled categories and the order they apply can be set via the URL
@@ -47,8 +43,9 @@ export function categorise(props) {
                     let categorized = [];
                     for (const phase of phases) {
                         categorized.push({
+                            type: 'phase',
                             key: phase,
-                            heading: `phase:${phase}`,
+                            data: phase,
                             addRequirements: req => req.labels = [...req.labels, `phase:${phase}`],
                             items: issues.filter(issue => issue.getNumberedLabelValue('phase') === phase)
                         });
@@ -57,8 +54,9 @@ export function categorise(props) {
                     const unphased = issues.filter(issue => issue.getNumberedLabelValue('phase') === null);
                     if (unphased.length > 0) {
                         categorized.push({
+                            type: 'phase',
                             key: -1,
-                            heading: 'unphased',
+                            data: null,
                             items: unphased,
                         });
                     }
@@ -73,13 +71,9 @@ export function categorise(props) {
 
                     for (const userStory of props.meta.userStories) {
                         categorized.push({
+                            type: 'story',
                             key: userStory.number,
-                            heading: (
-                                <a key={userStory.number}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    href={userStory.url}>User Story: {userStory.number} {userStory.title}</a>
-                            ),
+                            data: userStory,
                             addRequirements: req => req.labels = [...req.labels, `story:${userStory.number}`],
                             items: issues.filter(issue => issue.story && issue.story.number === userStory.number)
                         });
@@ -87,8 +81,9 @@ export function categorise(props) {
                     let unstoried = issues.filter(issue => !issue.story);
                     if (unstoried.length > 0) {
                         categorized.push({
+                            type: 'story',
                             key: -1,
-                            heading: 'Issues not associated with a story',
+                            data: null,
                             items: unstoried
                         });
                     }
@@ -107,8 +102,9 @@ export function categorise(props) {
                     let categorized = [];
                     for (const repo of repos) {
                         categorized.push({
+                            type: 'repo',
                             key: repo,
-                            heading: repo,
+                            data: repo,
                             addRequirements: req => req.repo = repo,
                             items: issues.filter(issue => `${issue.owner}/${issue.repo}` === repo)
                         });
