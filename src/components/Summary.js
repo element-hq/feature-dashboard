@@ -257,17 +257,24 @@ class Summary extends Component {
         const rows = [];
 
         const renderHeading = {
-            phase: heading => {
-                const { phase } = heading;
+            phase: ({ phase, hasChildCategories, requirements, items }) => {
                 let title = 'unphased';
                 if (phase) {
                     title = `phase:${phase}`;
                 }
-                rows.push(<SummaryRow />);
+                if (hasChildCategories) {
+                    rows.push(<SummaryRow />);
+                } else {
+                    rows.push(
+                        <SummaryRow
+                            requirements={requirements}
+                            items={items}
+                        />
+                    );
+                }
                 return title;
             },
-            story: heading => {
-                const { story } = heading;
+            story: ({ story, hasChildCategories, requirements, items }) => {
                 let title = 'Issues not associated with a story';
                 if (story) {
                     title = (
@@ -277,19 +284,30 @@ class Summary extends Component {
                             href={story.url}>User Story: {story.number} {story.title}</a>
                     );
                 }
-                rows.push(<SummaryRow />);
+                if (hasChildCategories) {
+                    rows.push(<SummaryRow />);
+                } else {
+                    rows.push(
+                        <SummaryRow
+                            requirements={requirements}
+                            items={items}
+                        />
+                    );
+                }
                 return title;
             },
-            repo: heading => {
-                const { repo, requirements, items } = heading;
-                const title = repo;
-                rows.push(
-                    <SummaryRow
-                        requirements={requirements}
-                        items={items}
-                    />
-                );
-                return title;
+            repo: ({ repo, hasChildCategories, requirements, items }) => {
+                if (hasChildCategories) {
+                    rows.push(<SummaryRow />);
+                } else {
+                    rows.push(
+                        <SummaryRow
+                            requirements={requirements}
+                            items={items}
+                        />
+                    );
+                }
+                return repo;
             },
         };
 
