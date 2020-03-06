@@ -121,6 +121,24 @@ body {
     margin-right: 0px;
 }
 
+.Summary-Body {
+    display: flex;
+}
+
+.Summary-Body .bucket {
+    padding: 5px 0 1px;
+}
+
+.Summary-Body .heading {
+    max-width: 300px;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.Summary-CategoryTree ul {
+    margin: 0;
+}
+
 .Summary-Table {
     display: table;
 }
@@ -134,10 +152,11 @@ body {
     padding: 3px;
 }
 
-.Summary-TableHeader div {
+.Summary-TableHeader {
     text-transform: uppercase;
     opacity: 0.6;
     font-size: 12px;
+    padding: 3px;
 }
 
 .Caption {
@@ -158,36 +177,28 @@ body {
     padding-left: 6px;
 }
 
-.Summary-Row div:nth-child(1) {
+.Summary-Row div:nth-child(3) {
     padding-right: 30px;
 }
 
-.Summary-Row div:nth-child(4) {
-    padding-right: 30px;
+.Summary-Row div:nth-child(5) {
+    opacity: 0.4;
 }
 
 .Summary-Row div:nth-child(6) {
     opacity: 0.4;
 }
 
-.Summary-Row div:nth-child(7) {
-    opacity: 0.4;
+.Summary-Row div:nth-child(8) {
+    padding-right: 30px;
 }
 
-.Summary-Row div:nth-child(9) {
-    padding-right: 30px;
+.Summary-Row div:nth-child(11) {
+    padding-right: 20px;
 }
 
 .Summary-Row div:nth-child(12) {
     padding-right: 20px;
-}
-
-.Summary-Row div:nth-child(13) {
-    padding-right: 20px;
-}
-
-.NoDate {
-    opacity: 0.3;
 }
 
 .Implementation {

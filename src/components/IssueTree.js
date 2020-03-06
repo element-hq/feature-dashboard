@@ -144,6 +144,7 @@ class IssueTreeBucket extends Component {
                 [bucket.type]: bucket.data,
                 hasChildCategories: childCategories.length > 0,
                 requirements,
+                items: bucket.items,
                 doneItems,
                 totalItems,
                 allDone,
