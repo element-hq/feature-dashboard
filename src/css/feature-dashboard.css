@@ -223,14 +223,14 @@ body {
 }
 
 nav {
-    width: min-content;
+    width: fit-content;
     font-size: 12px;
 }
 
-nav a {
+nav > * {
     padding-right: 5px;
 }
 
-nav a:last-child {
+nav > *:last-child {
     padding-right: 0;
 }

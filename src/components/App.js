@@ -160,6 +160,13 @@ class App extends Component {
             <div>
                 <HashChange onChange={this.onHashChange} />
                 <Router>
+                    <nav className="raised-box">
+                        {Object.entries(this.state.query).map(([key, value]) => (
+                            <span key={key}>
+                                {key}: {JSON.stringify(value)}
+                            </span>
+                        ))}
+                    </nav>
                     <Switch>
                         {this.routes.map(({ path, component: Component }) => (
                             <Route path={path} key={path}
