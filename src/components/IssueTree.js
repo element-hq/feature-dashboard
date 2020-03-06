@@ -28,6 +28,7 @@ class IssueTree extends Component {
         let renderItem = this.props.renderItem;
         let sortItems = this.props.sortItems || (() => 0);
         let renderHeading = this.props.renderHeading;
+        let collapsable = this.props.collapsable;
 
         if (categories.length === 0) {
             if (renderItem) {
@@ -54,6 +55,7 @@ class IssueTree extends Component {
                     renderItem={renderItem}
                     sortItems={sortItems}
                     renderHeading={renderHeading}
+                    collapsable={collapsable}
                 />
             })
         );
@@ -67,6 +69,7 @@ class IssueTreeBucket extends Component {
         const {
             bucket,
             parentRequirements,
+            collapsable,
         } = props;
 
         const totalItems = bucket.items.length;
@@ -82,7 +85,7 @@ class IssueTreeBucket extends Component {
             totalItems,
             doneItems,
             allDone,
-            expanded: !allDone,
+            expanded: collapsable ? !allDone : true,
             requirements,
         };
     }
@@ -91,6 +94,9 @@ class IssueTreeBucket extends Component {
         const targetClasses = e.target.classList;
         if (!targetClasses.contains("bucket") && !targetClasses.contains("heading")) {
             // Ignore events from child list items
+            return;
+        }
+        if (!this.props.collapsable) {
             return;
         }
         e.stopPropagation();
@@ -110,6 +116,7 @@ class IssueTreeBucket extends Component {
             renderItem,
             sortItems,
             renderHeading,
+            collapsable,
         } = this.props;
 
         const {
@@ -153,6 +160,7 @@ class IssueTreeBucket extends Component {
                     renderItem={renderItem}
                     sortItems={sortItems}
                     renderHeading={renderHeading}
+                    collapsable={collapsable}
                 />
             );
         }

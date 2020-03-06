@@ -160,6 +160,7 @@ class Plan extends Component {
                     renderItem={renderItem}
                     sortItems={sortItems}
                     renderHeading={renderHeading}
+                    collapsable={true}
                 />
             </div>
         );
