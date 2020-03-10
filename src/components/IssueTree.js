@@ -129,6 +129,7 @@ class IssueTreeBucket extends Component {
 
         const bucketClasses = classNames({
             bucket: true,
+            [bucket.type]: true,
             expanded,
         })
 
@@ -172,7 +173,7 @@ class IssueTreeBucket extends Component {
                     className={bucketClasses}
                     onClick={this.onBucketClick}
                 >
-                    <span className={headingClasses}>{heading}</span>
+                    <div className={headingClasses}>{heading}</div>
                     {children}
                 </li>
             </ul>

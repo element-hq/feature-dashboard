@@ -131,8 +131,11 @@ body {
 
 .Summary-Body .heading {
     max-width: 300px;
-    display: inline-block;
     white-space: nowrap;
+}
+
+.Summary-CategoryTree {
+    padding-right: 30px;
 }
 
 .Summary-CategoryTree ul {
@@ -149,7 +152,7 @@ body {
 
 .Summary-Row div {
     display: table-cell;
-    padding: 3px;
+    padding: 5px 3px 1px;
 }
 
 .Summary-TableHeader {
