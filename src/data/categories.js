@@ -26,6 +26,7 @@ export function categorise(props) {
     let requirements = {
         repo: null,
         labels: [],
+        notLabels: [],
     };
 
     for (const enabledCategory of enabledCategories) {
@@ -57,6 +58,9 @@ export function categorise(props) {
                             type: 'phase',
                             key: -1,
                             data: null,
+                            addRequirements: req => (req.notLabels = [
+                                ...req.notLabels, "phase:1", "phase:2", "phase:3", "phase:4", "phase:5",
+                            ]),
                             items: unphased,
                         });
                     }

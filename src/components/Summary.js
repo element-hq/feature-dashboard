@@ -69,7 +69,7 @@ class SummaryRow extends Component {
     }
 
     makeLink(query, requirements, q, issues) {
-        const { repo, labels } = requirements;
+        const { repo, labels, notLabels } = requirements;
 
         if (issues.length === 0) {
             return (
@@ -94,6 +94,10 @@ class SummaryRow extends Component {
         if (labels) {
             // FIXME: Links won't work for epics :(
             q = q.concat(labels.map(label => `label:${label}`));
+        }
+        if (notLabels) {
+            // FIXME: Links won't work for epics :(
+            q = q.concat(notLabels.map(label => `-label:${label}`));
         }
 
         let queryString = q.join('+');
