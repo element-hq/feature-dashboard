@@ -84,6 +84,9 @@ class App extends Component {
             issues: results.issues,
             meta: results.meta
         });
+
+        // For editing state via the console
+        window.app = this;
     }
 
     get routes() {
