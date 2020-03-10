@@ -68,7 +68,7 @@ class SummaryRow extends Component {
         return filter;
     }
 
-    makeLink(requirements, q, issues) {
+    makeLink(query, requirements, q, issues) {
         const { repo, labels } = requirements;
 
         if (issues.length === 0) {
@@ -107,6 +107,12 @@ class SummaryRow extends Component {
             searchUrl = `https://github.com/${repo}/issues?utf8=%E2%9C%93&q=${queryString}`;
         }
 
+        // If this is a story-based query, the links will only be correct if we
+        // have grouped by story and collected a story label.
+        if (query.epics && !labels.some(l => l.startsWith('story:'))) {
+            searchUrl = null;
+        }
+
         let issueNumbers = issues.map(x => `#${x.number} ${x.title}`).reduce((a, b) => a.concat(b), []);
         return (
             <a href={ searchUrl } target="_blank" rel="noopener noreferrer" title={ issueNumbers.join("\n") }>
@@ -117,6 +123,7 @@ class SummaryRow extends Component {
 
     render() {
         const {
+            query,
             requirements,
             items,
         } = this.props;
@@ -134,6 +141,7 @@ class SummaryRow extends Component {
             <div className="Summary-Row">
                 <div>{
                     this.makeLink(
+                        query,
                         requirements,
                         [
                             'is:open',
@@ -145,6 +153,7 @@ class SummaryRow extends Component {
                 }</div>
                 <div>{
                     this.makeLink(
+                        query,
                         requirements,
                         [
                             'is:open',
@@ -156,6 +165,7 @@ class SummaryRow extends Component {
                 }</div>
                 <div>{
                     this.makeLink(
+                        query,
                         requirements,
                         [
                             'is:closed',
@@ -166,6 +176,7 @@ class SummaryRow extends Component {
                 }</div>
                 <div>{
                     this.makeLink(
+                        query,
                         requirements,
                         [
                             'is:open',
@@ -181,6 +192,7 @@ class SummaryRow extends Component {
                 }</div>
                 <div>{
                     this.makeLink(
+                        query,
                         requirements,
                         [
                             'is:open',
@@ -193,6 +205,7 @@ class SummaryRow extends Component {
                 }</div>
                 <div>{
                     this.makeLink(
+                        query,
                         requirements,
                         [
                             'is:open',
@@ -205,6 +218,7 @@ class SummaryRow extends Component {
                 }</div>
                 <div>{
                     this.makeLink(
+                        query,
                         requirements,
                         [
                             'is:open',
@@ -216,6 +230,7 @@ class SummaryRow extends Component {
                 }</div>
                 <div>{
                     this.makeLink(
+                        query,
                         requirements,
                         [
                             'is:closed',
@@ -267,6 +282,7 @@ class Summary extends Component {
                 } else {
                     rows.push(
                         <SummaryRow
+                            query={query}
                             requirements={requirements}
                             items={items}
                         />
@@ -289,6 +305,7 @@ class Summary extends Component {
                 } else {
                     rows.push(
                         <SummaryRow
+                            query={query}
                             requirements={requirements}
                             items={items}
                         />
@@ -302,6 +319,7 @@ class Summary extends Component {
                 } else {
                     rows.push(
                         <SummaryRow
+                            query={query}
                             requirements={requirements}
                             items={items}
                         />
