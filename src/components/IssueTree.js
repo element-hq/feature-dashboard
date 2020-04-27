@@ -16,7 +16,6 @@ limitations under the License.
 
 import React, { Component } from 'react';
 import classNames from 'classnames';
-import Github from '../Github';
 
 class IssueTree extends Component {
     render() {
@@ -27,14 +26,20 @@ class IssueTree extends Component {
         };
         let items = this.props.items;
         let renderItem = this.props.renderItem;
-        let sortItems = this.props.sortItems;
+        let sortItems = this.props.sortItems || (() => 0);
+        let renderHeading = this.props.renderHeading;
+        let collapsable = this.props.collapsable;
 
         if (categories.length === 0) {
-            return (
-                <ul>
-                    { items.sort(sortItems).map(item => renderItem(item)) }
-                </ul>
-            );
+            if (renderItem) {
+                return (
+                    <ul>
+                        {items.sort(sortItems).map(item => renderItem(item))}
+                    </ul>
+                );
+            } else {
+                return null;
+            }
         }
 
         let categorize = categories[0];
@@ -49,6 +54,8 @@ class IssueTree extends Component {
                     categories={categories}
                     renderItem={renderItem}
                     sortItems={sortItems}
+                    renderHeading={renderHeading}
+                    collapsable={collapsable}
                 />
             })
         );
@@ -62,6 +69,7 @@ class IssueTreeBucket extends Component {
         const {
             bucket,
             parentRequirements,
+            collapsable,
         } = props;
 
         const totalItems = bucket.items.length;
@@ -77,7 +85,7 @@ class IssueTreeBucket extends Component {
             totalItems,
             doneItems,
             allDone,
-            expanded: !allDone,
+            expanded: collapsable ? !allDone : true,
             requirements,
         };
     }
@@ -86,6 +94,9 @@ class IssueTreeBucket extends Component {
         const targetClasses = e.target.classList;
         if (!targetClasses.contains("bucket") && !targetClasses.contains("heading")) {
             // Ignore events from child list items
+            return;
+        }
+        if (!this.props.collapsable) {
             return;
         }
         e.stopPropagation();
@@ -104,6 +115,8 @@ class IssueTreeBucket extends Component {
             categories,
             renderItem,
             sortItems,
+            renderHeading,
+            collapsable,
         } = this.props;
 
         const {
@@ -116,6 +129,7 @@ class IssueTreeBucket extends Component {
 
         const bucketClasses = classNames({
             bucket: true,
+            [bucket.type]: true,
             expanded,
         })
 
@@ -124,40 +138,18 @@ class IssueTreeBucket extends Component {
             done: allDone,
         });
 
-        const stateClasses = classNames({
-            state: true,
-            done: allDone,
-        });
-
         const childCategories = categories.slice(1);
-        let newIssueButtons;
-        if (childCategories.length === 0 && requirements.repo) {
-            // For the bug button, append the `bug` label.
-            const bugRequirements = Object.assign({}, requirements);
-            bugRequirements.labels = [...bugRequirements.labels, "bug"];
-
-            newIssueButtons = (
-                <span>
-                    <a
-                        className="new-issue"
-                        onClick={this.onNewIssueClick}
-                        href={Github.getNewIssueURL(requirements)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Add Task
-                    </a>
-                    <a
-                        className="new-issue"
-                        onClick={this.onNewIssueClick}
-                        href={Github.getNewIssueURL(bugRequirements)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Add Bug
-                    </a>
-                </span>
-            );
+        let heading;
+        if (renderHeading && renderHeading[bucket.type]) {
+            heading = renderHeading[bucket.type]({
+                [bucket.type]: bucket.data,
+                hasChildCategories: childCategories.length > 0,
+                requirements,
+                items: bucket.items,
+                doneItems,
+                totalItems,
+                allDone,
+            });
         }
 
         let children;
@@ -169,6 +161,8 @@ class IssueTreeBucket extends Component {
                     items={bucket.items}
                     renderItem={renderItem}
                     sortItems={sortItems}
+                    renderHeading={renderHeading}
+                    collapsable={collapsable}
                 />
             );
         }
@@ -179,12 +173,7 @@ class IssueTreeBucket extends Component {
                     className={bucketClasses}
                     onClick={this.onBucketClick}
                 >
-                    <span
-                        className={headingClasses}
-                    >{bucket.heading}&nbsp;
-                        <span className={stateClasses}>({doneItems} / {totalItems})</span>&nbsp;
-                        {newIssueButtons}
-                    </span>
+                    <div className={headingClasses}>{heading}</div>
                     {children}
                 </li>
             </ul>

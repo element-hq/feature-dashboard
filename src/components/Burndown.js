@@ -224,7 +224,7 @@ class Burndown extends Component {
 
         return (
             <div className="Burndown raised-box">
-                <h3>{ title(this.props.query) }</h3>
+                <h3>{ this.props.meta.milestoneTitle || title(this.props.query) }</h3>
                 <Line data={ data } options={ options }/>
             </div>
         );

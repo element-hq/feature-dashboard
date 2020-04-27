@@ -16,8 +16,10 @@ limitations under the License.
 
 import React, { Component } from 'react';
 import moment from 'moment';
+import classNames from 'classnames';
 import IssueTree from './IssueTree'
-
+import { categorise } from '../data/categories';
+import Github from '../data/Github';
 
 const title = query => {
 
@@ -35,111 +37,90 @@ const title = query => {
 class Plan extends Component {
 
     render() {
-        const { query } = this.props;
+        const { query, issues, meta } = this.props;
+        const { categories, requirements } = categorise({ query, issues, meta });
 
-        // Enabled categories and the order they apply can be set via the URL
-        // using category=A&category=B etc.
-        const enabledCategories = query.categorys || ['story', 'repo'];
-        let categories = [];
+        const decorateHeadingTitle = ({
+            title,
+            hasChildCategories,
+            requirements,
+            doneItems,
+            totalItems,
+            allDone,
+        }) => {
+            let newIssueButtons;
+            if (!hasChildCategories && requirements.repo) {
+                // For the bug button, append the `bug` label.
+                const bugRequirements = Object.assign({}, requirements);
+                bugRequirements.labels = [...bugRequirements.labels, "bug"];
 
-        // Requirements for new issues to appear in the plan.
-        // These are accumulated across categories as we descend.
-        let requirements = {
-            repo: null,
-            labels: [],
+                newIssueButtons = (
+                    <span>
+                        <a
+                            className="new-issue"
+                            onClick={this.onNewIssueClick}
+                            href={Github.getNewIssueURL(requirements)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Add Task
+                    </a>
+                        <a
+                            className="new-issue"
+                            onClick={this.onNewIssueClick}
+                            href={Github.getNewIssueURL(bugRequirements)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Add Bug
+                    </a>
+                    </span>
+                );
+            }
+
+            const stateClasses = classNames({
+                state: true,
+                done: allDone,
+            });
+
+            return (
+                <React.Fragment>
+                    {title}&nbsp;<span
+                        className={stateClasses}>({doneItems} / {totalItems})</span>&nbsp;
+                    {newIssueButtons}
+                </React.Fragment>
+            );
         };
 
-        for (const enabledCategory of enabledCategories) {
-            if (enabledCategory === 'phase') {
-                if (
-                    [].concat(...this.props.issues.map(issue => issue.labels))
-                      .some(label => label.startsWith('phase:'))
-                ) {
-                    categories.push(issues => {
-                        let phases = [...new Set(issues
-                            .map(issue => issue.getNumberedLabelValue('phase'))
-                            .filter(phase => phase !== null),
-                        )].sort();
-
-                        let categorized = [];
-                        for (const phase of phases) {
-                            categorized.push({
-                                key: phase,
-                                heading: `phase:${phase}`,
-                                addRequirements: req => req.labels = [...req.labels, `phase:${phase}`],
-                                items: issues.filter(issue => issue.getNumberedLabelValue('phase') === phase)
-                            });
-                        }
-
-                        const unphased = issues.filter(issue => issue.getNumberedLabelValue('phase') === null);
-                        if (unphased.length > 0) {
-                            categorized.push({
-                                key: -1,
-                                heading: 'unphased',
-                                items: unphased,
-                           });
-                        }
-
-                        return categorized;
-                    });
+        const renderHeading = {
+            phase: heading => {
+                const { phase } = heading;
+                let title = 'unphased';
+                if (phase) {
+                    title = `phase:${phase}`;
                 }
-            } else if (enabledCategory === 'story') {
-                if (query.epics) {
-                    categories.push(issues => {
-                        let categorized = [];
-
-                        for (const userStory of this.props.meta.userStories) {
-                            categorized.push({
-                                key: userStory.number,
-                                heading: (
-                                    <a key={ userStory.number }
-                                       target="_blank"
-                                       rel="noopener noreferrer"
-                                       href={ userStory.url }>User Story: {userStory.number} { userStory.title }</a>
-                                ),
-                                addRequirements: req => req.labels = [...req.labels, `story:${userStory.number}`],
-                                items: issues.filter(issue => issue.story && issue.story.number === userStory.number)
-                            });
-                        }
-                        let unstoried = issues.filter(issue => !issue.story);
-                        if (unstoried.length > 0) {
-                            categorized.push({
-                                key: -1,
-                                heading: 'Issues not associated with a story',
-                                items: unstoried
-                            });
-                        }
-
-                        return categorized;
-                    });
+                return decorateHeadingTitle({ title, ...heading });
+            },
+            story: heading => {
+                const { story } = heading;
+                let title = 'Issues not associated with a story';
+                if (story) {
+                    title = (
+                        <a key={story.number}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={story.url}>User Story: {story.number} {story.title}</a>
+                    );
                 }
-            } else if (enabledCategory === 'repo') {
-                if (query.repos && query.repos.length > 1) {
-                    categories.push(issues => {
-                        let repos = [...new Set(issues.map(issue => `${issue.owner}/${issue.repo}`))]
-                            .sort((repoA, repoB) => {
-                                return query.repos.indexOf(repoA) - query.repos.indexOf(repoB);
-                            });
+                return decorateHeadingTitle({ title, ...heading });
+            },
+            repo: heading => {
+                const { repo } = heading;
+                const title = repo;
+                return decorateHeadingTitle({ title, ...heading });
+            },
+        };
 
-                        let categorized = [];
-                        for (const repo of repos) {
-                            categorized.push({
-                                key: repo,
-                                heading: repo,
-                                addRequirements: req => req.repo = repo,
-                                items: issues.filter(issue => `${issue.owner}/${issue.repo}` === repo)
-                            });
-                        }
-
-                        return categorized;
-                    });
-                } else {
-                    requirements.repo = query.repos[0];
-                }
-            } else {
-                console.warn("Unknown category", enabledCategory);
-            }
-        }
         let renderLabel = (issue, label) => {
             if (!issue.labels.some(({ name }) => name === label)) {
                 return null;
@@ -153,7 +134,7 @@ class Plan extends Component {
                 <li className={`task ${issue.state}`} key={ issue.number }>
                     <a href={ issue.url } target="_blank" rel="noopener noreferrer" >{ `${issue.number} ${issue.title}` }</a>
                     <span className={ 'state ' + issue.state }>
-                            { issue.state === 'done' ? ' (done)' : 
+                            { issue.state === 'done' ? ' (done)' :
                               issue.state === 'wip' ? ` (${issue.assignees[0]} started ${moment(issue.inProgressSince).fromNow()}${issue.progress ? ': ' + issue.progress + ' complete': ''})` : '' }
                     </span>
                     { renderLabel(issue, 'blocked') }
@@ -171,17 +152,18 @@ class Plan extends Component {
 
         return (
             <div className="Plan raised-box">
-                <p className="title">{ this.props.meta.milestoneTitle || title(query) }</p>
+                <p className="title">{this.props.meta.milestoneTitle || title(query)}</p>
                 <IssueTree
                     categories={categories}
                     requirements={requirements}
-                    items={ this.props.issues }
-                    renderItem={ renderItem }
-                    sortItems={ sortItems }
+                    items={this.props.issues}
+                    renderItem={renderItem}
+                    sortItems={sortItems}
+                    renderHeading={renderHeading}
+                    collapsable={true}
                 />
             </div>
-        )
-
+        );
     }
 }
 

@@ -15,96 +15,48 @@ limitations under the License.
 */
 
 import React, { Component } from 'react';
-import dateFormat from 'dateformat';
+import { categorise } from '../data/categories';
+import IssueTree from './IssueTree';
 
-
-function template(labels, repo) {
+function template() {
     return {
-        labels: labels,
-        repo: repo,
-        deliveryDate: undefined,
         todo: {
             issues: [],
             p1bugs: [],
             p2bugs: [],
             p3bugs: [],
-            others: []
         },
         wip: {
             issues: [],
             p1bugs: [],
             p2bugs: [],
             p3bugs: [],
-            others: []
         },
         done: {
             issues: [],
             p1bugs: [],
             p2bugs: [],
             p3bugs: [],
-            others: []
         }
     };
 }
 
-function establishDeliveryDate(issue, deliveryDate) {
-    if (deliveryDate === null) {
-        return null;
+function calculatePercentCompleted(buckets) {
+    let counted = ['issues', 'p1bugs'];
+
+    let completed = counted.map(type => buckets.done[type].length).reduce((a, b) => a + b);
+    let total = counted.map(type =>
+        buckets.todo[type].length +
+        buckets.wip[type].length +
+        buckets.done[type].length).reduce((a, b) => a + b, 0);
+
+    if (total === 0) {
+        return '~';
     }
-    else if (issue.milestone && issue.milestone.due_on) {
-        if (deliveryDate === undefined) {
-            return new Date(issue.milestone.due_on);
-        }
-        else {
-            return Math.max(deliveryDate, new Date(issue.milestone.due_on));
-        }
-    }
-    else {
-        return null;
-    }
+    return (completed / total * 100).toFixed(0);
 }
-
-function generateSummary(issues, labels, searchRepos = []) {
-    const repos = {};
-    for (const repo of searchRepos) {
-        repos[repo] = template(labels, repo);
-    }
-
-    for (const issue of issues) {
-        const repoName = `${issue.owner}/${issue.repo}`
-        const repo = repos[repoName];
-
-        repo[issue.state][issue.type].push(issue);
-        if (issue.state !== 'done' && ['issues', 'p1bugs'].includes(issue.type)) {
-            repo.deliveryDate = establishDeliveryDate(issue, repo.deliveryDate);
-        }
-
-    }
-    return {
-        labels: labels,
-        repos: Object.values(repos)
-    }
-}
-
 
 class SummaryRow extends Component {
-
-
-    calculatePercentCompleted(repoFeature) {
-        let counted = ['issues', 'p1bugs'];
-
-        let completed = counted.map(type => repoFeature.done[type].length).reduce((a, b) => a + b);
-        let total = counted.map(type =>
-            repoFeature.todo[type].length +
-            repoFeature.wip[type].length +
-            repoFeature.done[type].length).reduce((a, b) => a + b, 0);
-
-        if (total === 0) {
-            return '~';
-        }
-        return (completed / total * 100).toFixed(0);
-    }
-
     getAssigneesFilter(issues) {
         let filter = [...new Set(issues.map(issue => issue.assignees)
             .reduce((a, b) => a.concat(b), []))]
@@ -116,7 +68,9 @@ class SummaryRow extends Component {
         return filter;
     }
 
-    makeLink(repo, labels, q, issues) {
+    makeLink(query, requirements, q, issues) {
+        const { repo, labels, notLabels } = requirements;
+
         if (issues.length === 0) {
             return (
                 <span>0</span>
@@ -141,6 +95,10 @@ class SummaryRow extends Component {
             // FIXME: Links won't work for epics :(
             q = q.concat(labels.map(label => `label:${label}`));
         }
+        if (notLabels) {
+            // FIXME: Links won't work for epics :(
+            q = q.concat(notLabels.map(label => `-label:${label}`));
+        }
 
         let queryString = q.join('+');
 
@@ -153,6 +111,12 @@ class SummaryRow extends Component {
             searchUrl = `https://github.com/${repo}/issues?utf8=%E2%9C%93&q=${queryString}`;
         }
 
+        // If this is a story-based query, the links will only be correct if we
+        // have grouped by story and collected a story label.
+        if (query.epics && !labels.some(l => l.startsWith('story:'))) {
+            searchUrl = null;
+        }
+
         let issueNumbers = issues.map(x => `#${x.number} ${x.title}`).reduce((a, b) => a.concat(b), []);
         return (
             <a href={ searchUrl } target="_blank" rel="noopener noreferrer" title={ issueNumbers.join("\n") }>
@@ -162,50 +126,62 @@ class SummaryRow extends Component {
     }
 
     render() {
-        let repoFeature = this.props.repoFeature;
+        const {
+            query,
+            requirements,
+            items,
+        } = this.props;
+
+        if (!items) {
+            return <div className="Summary-Row"><div>&nbsp;</div></div>;
+        }
+
+        const buckets = template();
+        for (const issue of items) {
+            buckets[issue.state][issue.type].push(issue);
+        }
 
         return (
             <div className="Summary-Row">
-                <div><a href={ `https://github.com/${ repoFeature.repo }/issues` }>{ repoFeature.repo }</a></div>
                 <div>{
                     this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
+                        query,
+                        requirements,
                         [
                             'is:open',
                             'no:assignee',
-                            'label:feature'
+                            '-label:bug',
                         ],
-                        repoFeature.todo.issues
+                        buckets.todo.issues
                     )
                 }</div>
                 <div>{
                     this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
+                        query,
+                        requirements,
                         [
                             'is:open',
                             'assignee:*',
-                            'label:feature'
+                            '-label:bug',
                         ],
-                        repoFeature.wip.issues
+                        buckets.wip.issues
                     )
                 }</div>
                 <div>{
                     this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
+                        query,
+                        requirements,
                         [
                             'is:closed',
-                            'label:feature'
+                            '-label:bug',
                         ],
-                        repoFeature.done.issues
+                        buckets.done.issues
                     )
                 }</div>
                 <div>{
                     this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
+                        query,
+                        requirements,
                         [
                             'is:open',
                             'no:assignee',
@@ -215,100 +191,59 @@ class SummaryRow extends Component {
                             '-label:p4', /* of unprioritised bugs. */
                             '-label:p5'
                         ],
-                        repoFeature.todo.p1bugs
+                        buckets.todo.p1bugs
                     )
                 }</div>
                 <div>{
                     this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
+                        query,
+                        requirements,
                         [
                             'is:open',
                             'no:assignee',
                             'label:bug',
                             'label:p2'
                         ],
-                        repoFeature.todo.p2bugs
+                        buckets.todo.p2bugs
                     )
                 }</div>
                 <div>{
                     this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
+                        query,
+                        requirements,
                         [
                             'is:open',
                             'no:assignee',
                             'label:bug',
                             'label:p3'
                         ],
-                        repoFeature.todo.p3bugs
+                        buckets.todo.p3bugs
                     )
                 }</div>
                 <div>{
                     this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
+                        query,
+                        requirements,
                         [
                             'is:open',
                             'assignee:*',
                             'label:bug'
                         ],
-                        repoFeature.wip.p1bugs.concat(repoFeature.wip.p2bugs).concat(repoFeature.wip.p3bugs)
+                        buckets.wip.p1bugs.concat(buckets.wip.p2bugs).concat(buckets.wip.p3bugs)
                     )
                 }</div>
                 <div>{
                     this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
+                        query,
+                        requirements,
                         [
                             'is:closed',
                             'label:bug'
                         ],
-                        repoFeature.done.p1bugs.concat(repoFeature.done.p2bugs).concat(repoFeature.done.p3bugs)
+                        buckets.done.p1bugs.concat(buckets.done.p2bugs).concat(buckets.done.p3bugs)
                     )
                 }</div>
-                <div>{
-                    this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
-                        [
-                            'is:open',
-                            'no:assignee',
-                            '-label:feature',
-                            '-label:bug',
-                        ],
-                        repoFeature.todo.others
-                    )
-                }</div>
-                <div>{
-                    this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
-                        [
-                            'is:open',
-                            'assignee:*',
-                            '-label:feature',
-                            '-label:bug',
-                        ],
-                        repoFeature.wip.others
-                    )
-                }</div>
-                <div>{
-                    this.makeLink(
-                        repoFeature.repo,
-                        repoFeature.labels,
-                        [
-                            'is:closed',
-                            '-label:feature',
-                            '-label:bug',
-                        ],
-                        repoFeature.done.others
-                    )
-                }</div>
-                <div className={ repoFeature.deliveryDate ? "" : "NoDate" }>{ repoFeature.deliveryDate ?
-                        dateFormat(repoFeature.deliveryDate, 'yyyy-mm-dd') :
-                    'n/a' }</div>
-                <div className="Completed">{ this.calculatePercentCompleted(repoFeature) }%</div>
+                <div className="Completed">{ calculatePercentCompleted(buckets) }%</div>
             </div>
         );
     }
@@ -328,76 +263,117 @@ const title = query => {
 };
 
 class Summary extends Component {
-
-    calculatePercentCompleted(feature) {
-        let counted = ['issues', 'p1bugs'];
-
-        let completed = 0;
-        let total = 0;
-
-        for (const repoFeature of feature.repos) {
-            completed += counted.map(type => repoFeature.done[type].length).reduce((a, b) => a + b);
-            total += counted.map(type => 
-                repoFeature.todo[type].length +
-                repoFeature.wip[type].length +
-                repoFeature.done[type].length).reduce((a, b) => a + b, 0);
-        }
-
-        if (total === 0) {
-            return "~";
-        }
-        return (completed / total * 100).toFixed(0);
-    }
-
     render() {
-        let feature = generateSummary(
-            this.props.issues,
-            this.props.query.labels,
-            this.props.query.repos
-        );
+        const { query, issues, meta } = this.props;
+        const { categories, requirements } = categorise({ query, issues, meta });
 
-        let rows = feature.repos.map(repo => <SummaryRow repoFeature={ repo }
-            key={ repo.repo } />
-        );
+        // Bucket issues by state just for the overall progress
+        const buckets = template();
+        for (const issue of issues) {
+            buckets[issue.state][issue.type].push(issue);
+        }
+
+        const rows = [];
+
+        const renderHeading = {
+            phase: ({ phase, hasChildCategories, requirements, items }) => {
+                let title = 'unphased';
+                if (phase) {
+                    title = `phase:${phase}`;
+                }
+                if (hasChildCategories) {
+                    rows.push(<SummaryRow />);
+                } else {
+                    rows.push(
+                        <SummaryRow
+                            query={query}
+                            requirements={requirements}
+                            items={items}
+                        />
+                    );
+                }
+                return title;
+            },
+            story: ({ story, hasChildCategories, requirements, items }) => {
+                let title = 'Issues not associated with a story';
+                if (story) {
+                    title = (
+                        <a key={story.number}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={story.url}>User Story: {story.number} {story.title}</a>
+                    );
+                }
+                if (hasChildCategories) {
+                    rows.push(<SummaryRow />);
+                } else {
+                    rows.push(
+                        <SummaryRow
+                            query={query}
+                            requirements={requirements}
+                            items={items}
+                        />
+                    );
+                }
+                return title;
+            },
+            repo: ({ repo, hasChildCategories, requirements, items }) => {
+                if (hasChildCategories) {
+                    rows.push(<SummaryRow />);
+                } else {
+                    rows.push(
+                        <SummaryRow
+                            query={query}
+                            requirements={requirements}
+                            items={items}
+                        />
+                    );
+                }
+                return repo;
+            },
+        };
 
         return (
             <div className="Summary raised-box">
                 <div className="Summary-Header">
-                    <div className="Label">{ title(this.props.query) }</div>
-                    <div className="PercentComplete">{ this.calculatePercentCompleted(feature) }%</div>
+                    <div className="Label">{ this.props.meta.milestoneTitle || title(this.props.query) }</div>
+                    <div className="PercentComplete">{ calculatePercentCompleted(buckets) }%</div>
                 </div>
-                <div className="Summary-Table">
-                    <div className="Summary-Column"></div>
-                    <div className="Summary-Column Implementation"></div>
-                    <div className="Summary-Column Implementation"></div>
-                    <div className="Summary-Column Implementation"></div>
-                    <div className="Summary-Column Bugs"></div>
-                    <div className="Summary-Column Bugs"></div>
-                    <div className="Summary-Column Bugs"></div>
-                    <div className="Summary-Column Bugs"></div>
-                    <div className="Summary-Column Bugs"></div>
-                    <div className="Summary-Column Implementation"></div>
-                    <div className="Summary-Column Implementation"></div>
-                    <div className="Summary-Column Implementation"></div>
-                    <div className="Summary-Column"></div>
-                    <div className="Summary-Column"></div>
-                    <div className="Summary-Row Summary-TableHeader">
-                        <div>Repo</div>
-                        <div><span className="MetaTitleHolder"><span className="MetaTitle">Planned Work</span></span>Todo</div>
-                        <div>WIP</div>
-                        <div>Done</div>
-                        <div><span className="MetaTitleHolder"><span className="MetaTitle">Bugs</span></span>P1</div>
-                        <div>P2</div>
-                        <div>P3</div>
-                        <div>WIP</div>
-                        <div>Fixed</div>
-                        <div><span className="MetaTitleHolder"><span className="MetaTitle">Other</span></span>Todo</div>
-                        <div>WIP</div>
-                        <div>Done</div>
-                        <div>Delivery</div>
-                        <div></div>
+                <div className="Summary-Body">
+                    <div className="Summary-CategoryTree">
+                        <div className="Summary-TableHeader">Category</div>
+                        <IssueTree
+                            categories={categories}
+                            requirements={requirements}
+                            items={this.props.issues}
+                            renderHeading={renderHeading}
+                        />
                     </div>
-                    { rows }
+                    <div className="Summary-Table">
+                        <div className="Summary-Column"></div>
+                        <div className="Summary-Column Implementation"></div>
+                        <div className="Summary-Column Implementation"></div>
+                        <div className="Summary-Column Implementation"></div>
+                        <div className="Summary-Column Bugs"></div>
+                        <div className="Summary-Column Bugs"></div>
+                        <div className="Summary-Column Bugs"></div>
+                        <div className="Summary-Column Bugs"></div>
+                        <div className="Summary-Column Bugs"></div>
+                        <div className="Summary-Column"></div>
+                        <div className="Summary-Column"></div>
+                        <div className="Summary-Row Summary-TableHeader">
+                            <div><span className="MetaTitleHolder"><span className="MetaTitle">Planned Work</span></span>Todo</div>
+                            <div>WIP</div>
+                            <div>Done</div>
+                            <div><span className="MetaTitleHolder"><span className="MetaTitle">Bugs</span></span>P1</div>
+                            <div>P2</div>
+                            <div>P3</div>
+                            <div>WIP</div>
+                            <div>Fixed</div>
+                            <div>Progress</div>
+                        </div>
+                        {rows}
+                    </div>
                 </div>
             </div>
         );
