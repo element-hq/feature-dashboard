@@ -122,11 +122,11 @@ class Plan extends Component {
         };
 
         let renderLabel = (issue, label) => {
-            if (!issue.labels.some(({ name }) => name === label)) {
+            if (!issue.labels.some(name => name === label)) {
                 return null;
             }
             return <span className={'label ' + label}>
-                {` (${label})`}
+                {label}
             </span>;
         };
         let renderItem = issue => {
@@ -135,9 +135,14 @@ class Plan extends Component {
                     <a href={ issue.url } target="_blank" rel="noopener noreferrer" >{ `${issue.number} ${issue.title}` }</a>
                     <span className={ 'state ' + issue.state }>
                             { issue.state === 'done' ? ' (done)' :
-                              issue.state === 'wip' ? ` (${issue.assignees[0]} started ${moment(issue.inProgressSince).fromNow()}${issue.progress ? ': ' + issue.progress + ' complete': ''})` : '' }
+                              issue.state === 'wip' ? ` (${issue.assignees[0]} started${issue.inProgressSince ? (' ' + moment(issue.inProgressSince).fromNow()) : ''}${issue.progress ? ': ' + issue.progress + ' complete': ''})` : '' }
                     </span>
-                    { renderLabel(issue, 'blocked') }
+                    <div className="labels">
+                        {renderLabel(issue, 'blocked')}
+                        {renderLabel(issue, 'needs-design')}
+                        {renderLabel(issue, 'needs-investigation')}
+                        {renderLabel(issue, 'needs-product-decision')}
+                    </div>
                 </li>
             );
         };
