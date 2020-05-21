@@ -74,8 +74,32 @@ body {
     opacity: 1;
 }
 
+.Plan .labels {
+    font-size: 10px;
+}
+
+.Plan .label {
+    border-radius: 3px;
+    padding: 2px 4px;
+    margin-right: 4px;
+    user-select: none;
+}
+
 .Plan .label.blocked {
-    color: red;
+    color: #ffffff;
+    background-color: #555555;
+}
+
+.Plan .label.needs-design {
+    background-color: #fef2c0;
+}
+
+.Plan .label.needs-investigation {
+    background-color: #2addaa
+}
+
+.Plan .label.needs-product-decision {
+    background-color: #f4224f
 }
 
 .Plan .title {
