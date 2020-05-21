@@ -122,7 +122,7 @@ class Plan extends Component {
         };
 
         let renderLabel = (issue, label) => {
-            if (!issue.labels.some(({ name }) => name === label)) {
+            if (!issue.labels.some(name => name === label)) {
                 return null;
             }
             return <span className={'label ' + label}>
@@ -137,7 +137,12 @@ class Plan extends Component {
                             { issue.state === 'done' ? ' (done)' :
                               issue.state === 'wip' ? ` (${issue.assignees[0]} started${issue.inProgressSince ? (' ' + moment(issue.inProgressSince).fromNow()) : ''}${issue.progress ? ': ' + issue.progress + ' complete': ''})` : '' }
                     </span>
-                    { renderLabel(issue, 'blocked') }
+                    <div>
+                        {renderLabel(issue, 'blocked')}
+                        {renderLabel(issue, 'needs-design')}
+                        {renderLabel(issue, 'needs-product-decision')}
+                        {renderLabel(issue, 'needs-investigation')}
+                    </div>
                 </li>
             );
         };
