@@ -77,7 +77,8 @@ class Github {
             issues: issues,
             meta: {
                 userStories: epicMilestone.stories,
-                milestoneTitle: epicMilestone.title
+                milestoneTitle: epicMilestone.title,
+                milestoneUrl: epicMilestone.url
             }
         }
     }
@@ -88,6 +89,7 @@ class Github {
                 repository(owner: $owner, name: $project) {
                     milestone(number: $number) {
                         title
+                        url
                         issues(first: 100) {
                             edges {
                                 cursor
@@ -161,6 +163,7 @@ class Github {
 
         return {
             title: results.repository.milestone.title,
+            url: results.repository.milestone.url,
             stories: stories
         }
     }
@@ -384,7 +387,10 @@ class Issue {
             createdAt: graphqlIssue.createdAt,
             closedAt: graphqlIssue.closedAt,
             inProgressSince: inProgressSince,
-            progress: pending ? `${done} / ${done + pending}` : null,
+            progress: pending ? {
+                done: done,
+                total: done + pending
+            } : null,
             getNumberedLabelValue: function(labelPrefix) {
                 let matches = this.labels.filter(label => label.startsWith(`${labelPrefix}:`));
                 if (matches.length > 0) {

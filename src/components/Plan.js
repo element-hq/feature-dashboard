@@ -22,7 +22,8 @@ import IssueTree from './IssueTree'
 const title = query => {
 
     if (query.epics) {
-        return query.epics.join(' ');
+        // FIXME: Inconsistent - can we speicify one epic or many?
+        return query.epics[0].replace(/^epic:/, '');
     }
     else if (query.labels) {
         return query.labels.join(' ');
@@ -48,8 +49,12 @@ class Plan extends Component {
                             <a key={ userStory.number }
                                target="_blank"
                                rel="noopener noreferrer" 
-                               href={ userStory.url }> User Story: {userStory.number} { userStory.title } </a>
+                               href={ userStory.url }>
+                                <span className="id">{ userStory.number }</span>
+                                <span className="story">{ userStory.title }</span>
+                            </a>
                         ),
+                        class: 'stories',
                         items: issues.filter(issue => issue.story && issue.story.number === userStory.number)
                     });
                 }
@@ -58,6 +63,7 @@ class Plan extends Component {
                     categorized.push({
                         key: -1,
                         heading: 'Issues not associated with a story',
+                        class: 'stories',
                         items: unstoried
                     });
                 }
@@ -78,12 +84,14 @@ class Plan extends Component {
                     categorized.push({
                         key: phase,
                         heading: `phase:${phase}`,
+                        class: 'phases',
                         items: issues.filter(issue => issue.getNumberedLabelValue('phase') === phase)
                     });
                 }
                 categorized.push({
                     key: -1,
                     heading: 'unphased',
+                    class: 'phases',
                     items: issues.filter(issue => issue.getNumberedLabelValue('phase') === null)
                 });
 
@@ -106,7 +114,10 @@ class Plan extends Component {
                 for (const repo of repos) {
                     categorized.push({
                         key: repo,
-                        heading: repo,
+                        heading: (
+                            <span className="repo">{ repo }</span>
+                        ),
+                        class: 'repos',
                         items: issues.filter(issue => `${issue.owner}/${issue.repo}` === repo)
                     });
                 }
@@ -123,17 +134,81 @@ class Plan extends Component {
             </span>;
         };
         let renderItem = issue => {
+            let topRight = null;
+            if (issue.state !== 'wip') {
+                topRight = (
+                    <span className="topRight">
+                        <span className="stateText">{ issue.state }</span>
+                    </span>
+                );
+            }
+            else if (issue.assignees && issue.assignees.length > 0) {
+                topRight = (
+                    <span className="topRight">
+                        <span className="owner">{ issue.assignees && issue.assignees[0] }</span>
+                        <span className="time">Started { moment(issue.inProgressSince).fromNow() }</span>
+                    </span>
+                );
+            }
+
+            let progress = null;
+            if(issue.state === 'wip' && issue.progress) {
+                let done = issue.progress.done / issue.progress.total * 100;
+                let remaining = 100 - done;
+                progress = (
+                    <span className="progress">
+                        <span className="progress-description">{ `${issue.progress.done}/${issue.progress.total}` }</span>
+                        <span className="progress-done" style={{width: `${done}%`}}></span>
+                        <span className="progress-total" style={{width: `${remaining}%`}}></span>
+                    </span>
+
+                );
+            }
+
+            let labels = null;
+            let relevantLabels = issue.labels.filter(x => ['defect', 'regression', 'bug'].includes(x) || x.startsWith('blocked'));
+            if(relevantLabels.length > 0) {
+                labels = (
+                    <span className="labels">
+                            {
+                                relevantLabels.map(relevantLabel =>
+                                    <span style={{background: '#E34E4E'}}>{ relevantLabel }</span>
+                                )
+                            }
+                    </span>
+                )
+            }
             return (
-                <li className={`task ${issue.state}`} key={ issue.number }>
-                    <a href={ issue.url } target="_blank" rel="noopener noreferrer" >{ `${issue.number} ${issue.title}` }</a>
+                <li key={ issue.number }>
+                    <a className={ `card ${issue.state }` } href={ issue.url } target="_blank" rel="noopener noreferrer" >
+                        <span className="status"></span>
+                        <span className="card-body">
+                            <span className="top">
+                                <span className="id">{ issue.number }</span>
+                                { topRight }
+                            </span>
+                            <span className="title">{ issue.title }</span>
+                            { progress }
+                            { labels }
+                        </span>
+                    </a>
+
+                </li>
+            );
+        };
+
+        /*
+         
+                    <!--
+                        { `${issue.number} ${issue.title}` }</a>
                     <span className={ 'state ' + issue.state }>
                             { issue.state === 'done' ? ' (done)' : 
                               issue.state === 'wip' ? ` (${issue.assignees[0]} started ${moment(issue.inProgressSince).fromNow()}${issue.progress ? ': ' + issue.progress + ' complete': ''})` : '' }
                     </span>
-                    { renderLabel(issue, 'blocked') }
-                </li>
-            );
-        };
+                        { renderLabel(issue, 'blocked') }
+                        -->
+
+*/
 
         let sortItems = (a, b) => {
             let states = ['done', 'wip', 'todo'];
@@ -142,10 +217,12 @@ class Plan extends Component {
             }
             return a.number - b.number;
         };
-
         return (
-            <div className="Plan raised-box">
-                <p className="title">{ this.props.meta.milestoneTitle || title(this.props.query) }</p>
+            <div className="plan">
+                <h1><a href={ this.props.meta.milestoneUrl }
+                    target="_blank"
+                    rel="noopener noreferrer">
+                { this.props.meta.milestoneTitle && this.props.meta.milestoneTitle.replace(/^epic:/, '') || title(this.props.query) }</a></h1>
                 <IssueTree
                     categories={ categories }
                     items={ this.props.issues }

@@ -199,3 +199,211 @@ nav a {
 nav a:last-child {
     padding-right: 0;
 }
+
+
+
+/* NEW STUFFS BELOW */
+
+@import url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+
+body {
+    margin: 0px;
+}
+
+.plan {
+    border: 1px solid #D1CAD8;
+    border-radius: 4px;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    font-family: 'Roboto', sans-serif;
+    width: auto;
+    max-width: 720px;
+    margin: 8px;
+}
+
+.plan h1::before {
+    content: 'epic:';
+    color: #8B8C8C;
+}
+
+.plan h1 {
+    padding-left: 18px;
+    border-bottom: 1px solid #D1CAD8;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    line-height: 68px;
+    font-size: 24px;
+    background: #E8E9E9;
+}
+
+.plan h1 a {
+    text-decoration: none;
+    color: black;
+}
+
+.plan h1 a:hover {
+    text-decoration: underline;
+}
+
+.plan ul {
+    list-style: none;
+    padding: 0px;
+}
+
+.plan ul.stories {
+    margin: 0px;
+}
+
+.plan ul.stories>li {
+    padding-left: 18px;
+    font-size: 18px;
+    padding-top: 14px;
+    margin-bottom: 20px;
+}
+
+.plan ul.stories>li>a {
+    color: black;
+    text-decoration: none;
+}
+
+.plan ul.stories>li>a:hover {
+    text-decoration: underline;
+}
+
+.plan ul.stories:not(:first-of-type) {
+    border-top: 1px solid #D1CAD8;
+}
+
+.plan ul.stories>li .id {
+    color: #8B8C8C;
+    padding-right: 3px;
+}
+
+.plan ul.stories>li .id::before {
+    content: '#';
+}
+
+.plan ul.stories>li ul.repos>li .repo {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 14px;
+}
+
+.plan ul.stories>li ul.repos>li .repo::before {
+    color: #8B8C8C;
+    content: 'repo:';
+}
+
+.plan ul.stories>li ul.repos>li .repo::after {
+    color: #8B8C8C;
+    content: ':';
+}
+
+.plan ul.stories>li ul.repos>li ul.issues {
+    margin-top: 3px;
+    padding-top: 2px;
+    border-left: 2px solid #ECECEC;
+    padding-left: 18px;
+    margin-bottom: 4px;
+}
+
+.card {
+    color: black;
+    text-decoration: none;
+    border: 1px solid #E7E7E7;
+    display: inline-block;
+    width: auto;
+    margin-top: 6px;
+    margin-right: 16px;
+    display: flex;
+}
+
+.card:hover {
+    border: 1px solid #1578EC;
+}
+
+.card .progress {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.card .progress .progress-description {
+    font-size: 12px;
+    padding-right: 6px;
+}
+
+.card .progress .progress-done {
+    height: 4px;
+    background: #1578EC;
+}
+
+.card .progress .progress-total {
+    height: 4px;
+    background: #E3E3E3;
+}
+
+.card .status {
+    display: block;
+    width: 10px;
+}
+
+.card.wip .status {
+    background: #A8B8D5;
+}
+
+.card.todo .status {
+    background: #F3F3F3;
+}
+
+.card.done .status {
+    background: #19BC28;
+}
+
+.card.done {
+    opacity: 0.3;
+}
+
+.card .card-body {
+    width: 100%;
+    padding: 6px;
+    padding-bottom: 8px;
+}
+
+.card .top {
+    display: block;
+    width: 100%;
+    text-transform: uppercase;
+    color: #8B8C8C;
+    font-size: 12px;
+}
+
+.card .top .topRight {
+    float: right;
+}
+
+.card .top .topRight>span {
+    padding-left: 20px;
+}
+
+.card .title {
+}
+
+.card .labels {
+    display: block;
+    width: auto;
+    margin: 0px;
+    text-align: right;
+}
+
+.card .labels span {
+    text-transform: lowercase;
+    font-size: 11px;
+    color: white;
+    padding: 3px 4px 3px 4px;
+    margin-left: 4px;
+    border-radius: 3px;
+}
+
+
+
+
