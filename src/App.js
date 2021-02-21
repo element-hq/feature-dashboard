@@ -1,5 +1,5 @@
 /*
-Copyright 2019 New Vector Ltd
+Copyright 2019, 2020 New Vector Ltd
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -120,7 +120,11 @@ class App extends Component {
     }
 
     parseQueryFromHash(hash) {
-        const query = queryString.parse(hash.substring(hash.indexOf("?")));
+        let query = {};
+        const hashIndex = hash.indexOf("?");
+        if (hashIndex >= 0) {
+            query = queryString.parse(hash.substring(hashIndex));
+        }
         // Homogenise values from the query params so that we're always dealing with
         // arrays.
         let parsed = {};

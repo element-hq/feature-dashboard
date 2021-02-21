@@ -1,5 +1,5 @@
 /*
-Copyright 2019 New Vector Ltd
+Copyright 2019, 2020 New Vector Ltd
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ function establishDeliveryDate(issue, deliveryDate) {
     }
 }
 
-function generateSummary(issues, labels, searchRepos) { 
+function generateSummary(issues, labels, searchRepos = []) {
     const repos = {};
     for (const repo of searchRepos) {
         repos[repo] = template(labels, repo);
